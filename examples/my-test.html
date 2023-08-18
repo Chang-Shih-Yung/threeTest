@@ -186,7 +186,7 @@
 		// scene.fog = new THREE.Fog( 0xff0000, 1, 10 );
 
 		const material2 = new THREE.MeshStandardMaterial( {
-			emissive: 0xff0000,
+			emissive: 0x000000,
 			emissiveIntensity: 10,
 			// opacity: 0.9, // 设置不透明度
 			transparent: true, // 开启透明模式
@@ -357,9 +357,9 @@
 
 
 		// 不可翻轉地平線以下
-		// controls.maxPolarAngle = Math.PI / 2;
+		controls.maxPolarAngle = Math.PI / 2;
 		// 不可翻轉地平線以上
-		// controls.minPolarAngle = Math.PI / 2;
+		controls.minPolarAngle = Math.PI / 2;
 
 		// 是否能放大縮小
 		controls.enableZoom = true;
