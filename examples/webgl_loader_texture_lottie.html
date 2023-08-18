@@ -32,6 +32,7 @@
 			import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 			import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 			import { LottieLoader } from 'three/addons/loaders/LottieLoader.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 			let renderer, scene, camera;
 			let mesh;
@@ -78,6 +79,28 @@
 				window.addEventListener( 'resize', onWindowResize );
 
 			}
+
+			// 鏡頭控制
+		    const controls = new OrbitControls( camera, renderer.domElement );
+
+
+			// 不可翻轉地平線以下
+			controls.maxPolarAngle = Math.PI / 2;
+			// 不可翻轉地平線以上
+			controls.minPolarAngle = Math.PI / 2;
+
+			// 是否能放大縮小
+			controls.enableZoom = true;
+
+			controls.dampingFactor = 0.1; // 阻尼系數
+			controls.autoRotate = true; //啟用自動旋轉
+			controls.autoRotateSpeed = 0.15;
+			controls.enablePan = false;
+			controls.enableDamping = true;
+
+
+			// 禁止所以滑鼠行為
+			// controls.enabled = false;
 
 			function setupControls( animation ) {
 
