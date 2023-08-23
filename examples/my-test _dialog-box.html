@@ -292,8 +292,7 @@
 
 		} );
 
-		// eslint-disable-next-line no-unused-vars
-		document.addEventListener( 'click', ( event ) => {
+		document.addEventListener( 'click', () => {
 
 			if ( hoveredObject ) {
 
@@ -323,7 +322,6 @@
 			dialogBox.style.padding = '100px 50px';
 			dialogBox.style.border = '3px solid grey';
 			dialogBox.style.borderRadius = '0 20px 0 20px';
-			dialogBox.style.cursor = 'pointer';
 			dialogBox.style.pointerEvents = 'auto'; // Ensure the dialog box doesn't interfere with clicking
 			dialogBox.style.display = 'none'; // 初始化隱藏對話匡
 			document.body.appendChild( dialogBox );
@@ -333,6 +331,7 @@
 		};
 
 		const dialogBox = createDialogBox();
+
 
 		// 显示对话框
 		const showDialogBox = ( position ) => {
@@ -424,7 +423,7 @@
 						);
 						showDialogBox( screenPosition );
 						controls.enabled = false; // 禁止球体旋转
-						const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 150 );
+						const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 50 );
 						new TWEEN.Tween( camera.position )
 							.to( targetPosition, 1000 )
 							.easing( TWEEN.Easing.Quadratic.Out )
@@ -434,6 +433,7 @@
 
 						hideDialogBox();
 						controls.enabled = true; // 允许球体旋转
+
 
 					}
 
@@ -450,9 +450,9 @@
 
 
 		// 不可翻轉地平線以下
-		controls.maxPolarAngle = Math.PI / 2.5;
+		controls.maxPolarAngle = Math.PI / 2;
 		// 不可翻轉地平線以上
-		controls.minPolarAngle = Math.PI / 2; //2=360度
+		controls.minPolarAngle = Math.PI / 2.5; //2=360度
 
 		// 是否能放大縮小
 		controls.enableZoom = true;
