@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js webgl - lottie loader</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="main.css">
-	</head>
-	<body>
 
-		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - lottie<br/></br>
-			<input id="scrubber" type="range" value="0" style="width: 300px">
-		</div>
+<head>
+	<title>three.js webgl - lottie loader</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
 
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+<body>
 
-		<script type="importmap">
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - lottie<br /></br>
+		<input id="scrubber" type="range" value="0" style="width: 300px">
+	</div>
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+	<script type="importmap">
 			{
 				"imports": {
 					"three": "../build/three.module.js",
@@ -26,145 +28,152 @@
 			}
 		</script>
 
-		<script type="module">
+	<script type="module">
 
-			import * as THREE from 'three';
-			import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-			import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-			import { LottieLoader } from 'three/addons/loaders/LottieLoader.js';
-			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import * as THREE from 'three';
+		import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+		import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+		import { LottieLoader } from 'three/addons/loaders/LottieLoader.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-			let renderer, scene, camera;
-			let mesh;
+		let renderer, scene, camera;
+		let mesh;
 
-			init();
-			animate();
+		init();
+		animate();
 
-			function init() {
+		function init() {
 
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10 );
-				camera.position.z = 2.5;
+			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10 );
+			camera.position.z = 2.5;
 
-				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x111111 );
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x111111 );
 
-				const loader = new LottieLoader();
-				loader.setQuality( 0.3 );
-				loader.load( 'textures/lottie/loading.json', function ( texture ) {
+			const loader = new LottieLoader();
+			loader.setQuality( 0.3 );
+			loader.load( 'textures/lottie/loading.json', function ( texture ) {
 
-					setupControls( texture.animation );
+				setupControls( texture.animation );
 
-					// texture = new THREE.TextureLoader().load( 'textures/uv_grid_directx.jpg' );
-					// texture.colorSpace = THREE.SRGBColorSpace;
+				// texture = new THREE.TextureLoader().load( 'textures/uv_grid_directx.jpg' );
+				// texture.colorSpace = THREE.SRGBColorSpace;
 
-					const geometry = new RoundedBoxGeometry( 0, 2, 2, 7, 0.2 );
-					const material = new THREE.MeshStandardMaterial( { roughness: 0.3, map: texture, transparent: true,
-					 opacity: 1 } );
-					mesh = new THREE.Mesh( geometry, material );
-					scene.add( mesh );
-
+				const geometry = new RoundedBoxGeometry( 0, 2, 2, 7, 0.2 );
+				const material = new THREE.MeshStandardMaterial( {
+					roughness: 0.3, map: texture, transparent: true,
+					opacity: 1, emissiveIntensity: 100
 				} );
+				mesh = new THREE.Mesh( geometry, material );
+				scene.add( mesh );
 
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
+			} );
 
-				const environment = new RoomEnvironment();
-				const pmremGenerator = new THREE.PMREMGenerator( renderer );
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
 
-				scene.environment = pmremGenerator.fromScene( environment ).texture;
+			const environment = new RoomEnvironment();
+			const pmremGenerator = new THREE.PMREMGenerator( renderer );
 
-				//
-
-				window.addEventListener( 'resize', onWindowResize );
-
-			}
-
-			// 鏡頭控制
-		    const controls = new OrbitControls( camera, renderer.domElement );
-
-
-			// 不可翻轉地平線以下
-			controls.maxPolarAngle = Math.PI / 2;
-			// 不可翻轉地平線以上
-			controls.minPolarAngle = Math.PI / 2;
-
-			// 是否能放大縮小
-			controls.enableZoom = true;
-
-			controls.dampingFactor = 0.1; // 阻尼系數
-			controls.autoRotate = true; //啟用自動旋轉
-			controls.autoRotateSpeed = 0.15;
-			controls.enablePan = false;
-			controls.enableDamping = true;
-
-
-			// 禁止所以滑鼠行為
-			// controls.enabled = false;
-
-			function setupControls( animation ) {
-
-				// Lottie animation API
-				// https://airbnb.io/lottie/#/web
-
-				// There are a few undocumented properties:
-				// console.log( animation );
-
-				const scrubber = document.getElementById( 'scrubber' );
-				scrubber.max = animation.totalFrames;
-
-				scrubber.addEventListener( 'pointerdown', function () {
-
-					animation.pause();
-
-				} );
-
-				scrubber.addEventListener( 'pointerup', function () {
-
-					animation.play();
-
-				} );
-
-				scrubber.addEventListener( 'input', function () {
-
-					animation.goToAndStop( parseFloat( scrubber.value ), true );
-
-				} );
-
-				animation.addEventListener( 'enterFrame', function () {
-
-					scrubber.value = animation.currentFrame;
-
-				} );
-
-			}
-
-			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
+			scene.environment = pmremGenerator.fromScene( environment ).texture;
 
 			//
 
-			function animate() {
+			window.addEventListener( 'resize', onWindowResize );
 
-				requestAnimationFrame( animate );
+		}
 
-				if ( mesh ) {
+		// 鏡頭控制
+		const controls = new OrbitControls( camera, renderer.domElement );
 
-					mesh.rotation.y -= 0.01;
 
-				}
+		// 不可翻轉地平線以下
+		controls.maxPolarAngle = Math.PI / 2;
+		// 不可翻轉地平線以上
+		controls.minPolarAngle = Math.PI / 2;
 
-				renderer.render( scene, camera );
+		// 是否能放大縮小
+		controls.enableZoom = true;
+
+		controls.dampingFactor = 0.1; // 阻尼系數
+		controls.autoRotate = true; //啟用自動旋轉
+		controls.autoRotateSpeed = 0.15;
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+
+		// 禁止所以滑鼠行為
+		// controls.enabled = false;
+
+		function setupControls( animation ) {
+
+			// Lottie animation API
+			// https://airbnb.io/lottie/#/web
+
+			// There are a few undocumented properties:
+			// console.log( animation );
+
+			const scrubber = document.getElementById( 'scrubber' );
+			scrubber.max = animation.totalFrames;
+
+			scrubber.addEventListener( 'pointerdown', function () {
+
+				animation.pause();
+
+			} );
+
+			scrubber.addEventListener( 'pointerup', function () {
+
+				animation.play();
+
+			} );
+
+			scrubber.addEventListener( 'input', function () {
+
+				animation.goToAndStop( parseFloat( scrubber.value ), true );
+
+			} );
+
+			animation.addEventListener( 'enterFrame', function () {
+
+				scrubber.value = animation.currentFrame;
+
+			} );
+
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		//
+
+
+		function animate() {
+
+
+
+			requestAnimationFrame( animate );
+
+			if ( mesh ) {
+
+				// mesh.rotation.y -= 0.01;
 
 			}
 
-		</script>
-	</body>
+			renderer.render( scene, camera );
+
+
+		}
+
+	</script>
+</body>
+
 </html>

@@ -21,14 +21,15 @@
 	<!-- Import maps polyfill -->
 	<!-- Remove this when import maps will be widely supported -->
 	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
-	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.0/tween.umd.js"></script>
+
 
 	<script type="importmap">
 			{
 				"imports": {
 					"three": "../build/three.module.js",
 					"three/addons/": "./jsm/"
+					
 				}
 			}
 		</script>
@@ -42,7 +43,7 @@
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 		import Stats from 'three/addons/libs/stats.module.js';
 		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-		import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+
 
 
 		let camera, scene, renderer, stats, mixer, model;
@@ -97,7 +98,7 @@
 						// 從three中聲明材質
 						const material = new THREE.MeshStandardMaterial( {
 							emissive: 0xffffff, // 设置自发光颜色为白色
-							emissiveIntensity: 10, // 设置自发光强度（值越高，越亮）
+							emissiveIntensity: 100, // 设置自发光强度（值越高，越亮）
 							wireframe: true, // 将模型渲染为 wireframe
 						} );
 
@@ -121,19 +122,19 @@
 			// Load a glTF resource
 			loader.load(
 				// resource URL
-				'models/gltf/Xbot.glb',
+				'models/gltf/test222.gltf',
 				function ( gltf ) {
 
 
 					model = gltf.scene;
-					// scene.add( model );
+					scene.add( model );
 					// 建立gltf本身自帶的動畫
 
 					// 調整模型大小
-					model.scale.set( 100, 100, 100 );
+					model.scale.set( 0.5, 0.5, 0.5 );
 
 					// 初始化模型位置
-					// model.position.set( 0, 0, 0 );
+					model.position.set( 0, - 230, 20 );
 
 					// 將上面自發光的線匡導入
 					convertToWireframe( model );
@@ -147,14 +148,6 @@
 				}
 
 			);
-
-
-
-
-			// 導入輔助視覺方匡(大小、格數)
-			// const helper = new THREE.GridHelper( 500, 15, 0xffffff, 0xffffff );
-			// scene.add( helper );
-
 
 			//建立渲染器
 			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
@@ -172,34 +165,6 @@
 		}
 
 
-
-
-		// 線匡球體點擊---------------------------------------------
-
-
-		// 创建一个wireframe的球体
-		const geometry = new THREE.IcosahedronGeometry( 100, 8 );
-		const material = new THREE.MeshStandardMaterial( { wireframe: true, wireframeLinewidth: 2, emissive: 0xffffff, emissiveIntensity: 100 } );
-		const sphere = new THREE.Mesh( geometry, material );
-		scene.add( sphere );
-
-		const geometry2 = new THREE.IcosahedronGeometry( 98, 5 );
-
-		// 设置雾效
-		// scene.fog = new THREE.Fog( 0xff0000, 1, 10 );
-
-		const material2 = new THREE.MeshStandardMaterial( {
-			emissive: 0x000000,
-			emissiveIntensity: 10,
-			// opacity: 0.9, // 设置不透明度
-			transparent: true, // 开启透明模式
-
-
-		} );
-		const sphere2 = new THREE.Mesh( geometry2, material2 );
-
-		scene.add( sphere2 );
-
 		// 添加点击区块
 		const clickZones = [];
 
@@ -207,10 +172,9 @@
 		// // 创建点击区块的函数
 		const createClickZone = ( position, targetUrl ) => {
 
-			// Calculate the direction from position to the sphere's center
-			const directionToCenter = new THREE.Vector3().subVectors( sphere.position, position ).normalize();
 
-			const clickZoneGeometry = new THREE.ConeGeometry( 7, 15, 6 );
+
+			const clickZoneGeometry = new THREE.ConeGeometry( 9, 17, 6 );
 			const clickZoneMaterial = new THREE.MeshStandardMaterial( {
 				color: 0xffffff,
 				// wireframe: true,
@@ -221,45 +185,49 @@
 			} );
 			const clickZone = new THREE.Mesh( clickZoneGeometry, clickZoneMaterial );
 
-			// Calculate the rotation quaternion to point the cone away from the direction to center
-			const targetQuaternion = new THREE.Quaternion().setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), directionToCenter );
-
-			// Apply rotation and position to the clickZone
-			clickZone.quaternion.copy( targetQuaternion );
-
 			clickZone.position.copy( position );
 			scene.add( clickZone );
 
 			clickZone.userData.targetUrl = targetUrl;
 			clickZones.push( clickZone );
 
-		};
+			clickZone.rotation.z += Math.PI;
 
+		};
 
 
 		// 创建四个点击区块，分别位于球体的四个象限
 
-		createClickZone( new THREE.Vector3( 70, 50, 90 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
-		createClickZone( new THREE.Vector3( - 50, 70, - 90 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
-		createClickZone( new THREE.Vector3( 90, - 70, - 50 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
-		createClickZone( new THREE.Vector3( - 50, - 90, - 70 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
+		createClickZone( new THREE.Vector3( 30, 100, 40 ) );
+		createClickZone( new THREE.Vector3( - 50, - 20, 190 ) );
+		createClickZone( new THREE.Vector3( - 70, 20, - 170 ) );
+		createClickZone( new THREE.Vector3( 200, 0, - 20 ) );
 
 
 
 
-
-
-
-
-		// 监听点击和悬停事件
+		// 监听点击和hover事件
 		const raycaster = new THREE.Raycaster();
 		const mouse = new THREE.Vector2();
 		let hoveredObject = null;
+		let isRotating = false; // 用于跟踪物体是否正在旋转
 
 		// hover後緩慢放大
 		const handleHover = ( object, isHovered ) => {
 
 			const targetScale = isHovered ? 2 : 1;
+
+			if ( isHovered && ! isRotating ) {
+
+				isRotating = true;
+				rotateObject( object ); // 开始旋转
+		
+	} else if ( ! isHovered && isRotating ) {
+
+				isRotating = false;
+		
+	}
+
 
 			new TWEEN.Tween( object.scale )
 				.to( { y: targetScale }, 300 )
@@ -267,6 +235,25 @@
 				.start();
 
 		};
+
+		const rotateObject = ( object ) => {
+
+			new TWEEN.Tween( object.rotation )
+				.to( { y: object.rotation.y + Math.PI * 1 }, 800 ) // 每次旋转π（180度）
+				.easing( TWEEN.Easing.Linear.None )
+				.onComplete( () => {
+
+					if ( isRotating ) {
+
+						rotateObject( object ); // 继续循环旋转
+		
+					}
+		
+				} )
+				.start();
+
+};
+
 
 		document.addEventListener( 'mousemove', ( event ) => {
 
@@ -325,26 +312,134 @@
 
 		// ---------------------------------------------
 
+		// 创建一个点击区块上的对话框
+		const createDialogBox = () => {
 
-		// 讓模型跟著滑鼠方向稍微移動，可用在3d產品上
+			const dialogBox = document.createElement( 'div' );
+			dialogBox.style.position = 'absolute';
+			dialogBox.style.background = 'black';
+			dialogBox.style.opacity = '0.9';
+			dialogBox.style.color = 'white';
+			dialogBox.style.padding = '100px 50px';
+			dialogBox.style.border = '3px solid grey';
+			dialogBox.style.borderRadius = '0 20px 0 20px';
+			dialogBox.style.cursor = 'pointer';
+			dialogBox.style.pointerEvents = 'auto'; // Ensure the dialog box doesn't interfere with clicking
+			dialogBox.style.display = 'none'; // 初始化隱藏對話匡
+			document.body.appendChild( dialogBox );
 
-		// 鼠标位置和速度变量
-		const mouseZ = new THREE.Vector2();
-		const driftSpeed = 0; // 漂移速度，我現在調成零：關掉
-		const maxDriftDistance = 5; // 最大漂移距离
+			return dialogBox;
 
-		// 监听鼠标移动事件
-		document.addEventListener( 'mousemove', ( event ) => {
+		};
 
-			// 将鼠标的坐标归一化到范围[-1, 1]
-			mouseZ.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-			mouseZ.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+		const dialogBox = createDialogBox();
 
-			// 限制漂移范围在上下左右
-			mouse.x = Math.min( Math.max( mouse.x, - maxDriftDistance ), maxDriftDistance );
+		// 显示对话框
+		const showDialogBox = ( position ) => {
 
-			// 反转鼠标的y坐标，以实现上下移动方向顶倒
-			mouse.y = Math.min( Math.max( - mouse.y, - maxDriftDistance ), maxDriftDistance );
+			dialogBox.style.display = 'block';
+			dialogBox.style.left = `${position.x}px`;
+			dialogBox.style.top = `${position.y}px`;
+
+			dialogBox.innerHTML = '哈囉！低軌衛星';
+			dialogBox.style.fontSize = '28px';
+
+			// 创建关闭按钮
+			const closeButton = document.createElement( 'button' );
+			closeButton.innerHTML = '✖'; // 叉叉符号
+			closeButton.style.position = 'absolute';
+			closeButton.style.top = '10px';
+			closeButton.style.right = '10px';
+			closeButton.style.color = 'white';
+			closeButton.style.border = 'none';
+			closeButton.style.backgroundColor = 'transparent';
+			closeButton.style.cursor = 'pointer';
+			closeButton.style.fontSize = '18px'; // 设置字体大小
+			closeButton.addEventListener( 'click', () => {
+
+				hideDialogBox();
+				controls.enabled = true; // 允许球体旋转
+
+			} );
+			// 追加子集
+			dialogBox.appendChild( closeButton );
+
+		};
+
+		// 隐藏对话框
+		const hideDialogBox = () => {
+
+			dialogBox.style.display = 'none';
+
+		};
+
+		// 在点击对话框外部时隐藏对话框，點擊對話匡內部則無效
+		document.addEventListener( 'mouseup', ( event ) => {
+
+			if ( hoveredObject ) {
+
+				const clickedZone = hoveredObject.userData.targetUrl;
+				if ( ! clickedZone ) {
+
+					hideDialogBox();
+					controls.enabled = true; // 允许球体旋转
+
+				}
+
+			} else {
+
+				// 点击对话框外部时隐藏对话框
+				const isDialogClicked = dialogBox.contains( event.target );
+				if ( ! isDialogClicked ) {
+
+					hideDialogBox();
+					controls.enabled = true; // 允许球体旋转
+
+				}
+
+			}
+
+		} );
+
+		document.addEventListener( 'click', () => {
+
+			if ( hoveredObject ) {
+
+				const clickedZone = hoveredObject.userData.targetUrl;
+				if ( clickedZone ) {
+
+					window.location.href = clickedZone;
+
+				} else {
+
+					// 如果点击区块没有链接，显示对话框
+					const intersection = raycaster.intersectObject( hoveredObject );
+					if ( intersection.length > 0 ) {
+
+						const position = intersection[ 0 ].point.clone();
+						position.project( camera );
+						const screenPosition = new THREE.Vector2(
+							( position.x + 1 ) / 4 * window.innerWidth,
+							( - position.y + 1 ) / 2 * window.innerHeight
+						);
+						showDialogBox( screenPosition );
+						controls.enabled = false; // 禁止球体旋转
+						const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 150 );
+						new TWEEN.Tween( camera.position )
+							.to( targetPosition, 1000 )
+							.easing( TWEEN.Easing.Quadratic.Out )
+							.start();
+
+					} else {
+
+						hideDialogBox();
+						controls.enabled = true; // 允许球体旋转
+
+					}
+
+				}
+
+			}
 
 		} );
 
@@ -355,26 +450,26 @@
 
 
 		// 不可翻轉地平線以下
-		// controls.maxPolarAngle = Math.PI / 2;
+		controls.maxPolarAngle = Math.PI / 2.5;
 		// 不可翻轉地平線以上
-		// controls.minPolarAngle = Math.PI / 2;
+		controls.minPolarAngle = Math.PI / 2; //2=360度
 
 		// 是否能放大縮小
 		controls.enableZoom = true;
 
 		controls.dampingFactor = 0.01; // 阻尼系數
-		controls.autoRotate = true; //啟用自動旋轉
+		// controls.autoRotate = true; //啟用自動旋轉
 		controls.autoRotateSpeed = 0.15;
 		controls.enablePan = false;
 		controls.enableDamping = true;
 
 		// 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
-		controls.minDistance = 500;
-		controls.maxDistance = 500;
+		controls.minDistance = 600;
+		controls.maxDistance = 600;
 
 
 		// 禁止所以滑鼠行為
-		// controls.enabled = false;
+		controls.enabled = false;
 
 
 
@@ -418,45 +513,11 @@
 			//周期性执行渲染函数，请求下一帧渲染
 			requestAnimationFrame( animate );
 			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
-			mixer.update( delta );
+			// mixer.update( delta );
 
-
-			// 背景跟著滑鼠飄動
-			if ( sphere, geometry2, clickZones ) {
-
-				// 计算目标位置
-				const targetPosition = new THREE.Vector3( mouse.x * maxDriftDistance, - mouse.y * maxDriftDistance, - 5 );
-				// 使用lerp方法以缓慢移动模型
-				sphere.position.lerp( targetPosition, driftSpeed );
-				sphere2.position.lerp( targetPosition, driftSpeed );
-
-			}
 
 
 			TWEEN.update();
-
-			// 大旋转球体
-			// sphere.rotation.x += 0.0005;
-			// sphere.rotation.y += 0.00001;
-
-
-			// 更新点击区块、coneGeometry的位置和旋转，讓他跟著球體旋轉
-			for ( const clickZone of clickZones ) {
-
-				// 计算点击区块的位置，使其跟随球体旋转
-				const position = clickZone.position.clone().applyAxisAngle( new THREE.Vector3( 0, 1, 0 ), 0.00001 );
-
-				const directionToCenter = new THREE.Vector3().subVectors( sphere.position, position ).normalize();
-				const targetQuaternion = new THREE.Quaternion().setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), directionToCenter );
-				clickZone.quaternion.copy( targetQuaternion );
-
-				// Rotate the cone by 180 degrees
-				// clickZone.rotation.z += Math.PI;
-
-				// 更新点击区块的位置
-				clickZone.position.copy( position );
-
-			}
 
 			update();
 
