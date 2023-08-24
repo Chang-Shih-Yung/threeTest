@@ -407,7 +407,7 @@
 							const position = intersection[ 0 ].point.clone();
 							position.project( camera );
 							const screenPosition = new THREE.Vector2(
-								( position.x + 1 ) / 3 * window.innerWidth,
+								( - position.x + 1 ) / 2 * window.innerWidth,
 								( - position.y + 1 ) / 2 * window.innerHeight
 							);
 							showDialogBox( screenPosition );
