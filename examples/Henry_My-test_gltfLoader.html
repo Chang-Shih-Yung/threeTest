@@ -75,7 +75,7 @@
 						texture.mapping = THREE.EquirectangularReflectionMapping;
 
 						scene.background = texture;
-						scene.backgroundBlurriness = 0.5;
+						scene.backgroundBlurriness = 0;
 
 						scene.environment = texture;
 
@@ -110,7 +110,6 @@
 
 			// 導入gltf模型，並用開源的dracoLoader庫來壓縮gltf
 			const loader = new GLTFLoader();
-
 			const dracoLoader = new DRACOLoader();
 			dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );// 設置 Draco 解碼器的路徑
 			loader.setDRACOLoader( dracoLoader );// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
@@ -152,7 +151,7 @@
 			renderer.setPixelRatio( window.devicePixelRatio );
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
-			renderer.toneMappingExposure = 0.1;
+			renderer.toneMappingExposure = 3;
 			//將渲染器插入到body標籤裡
 			document.body.appendChild( renderer.domElement );
 			renderer.shadowMap.enabled = true;

@@ -41,7 +41,6 @@
 		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 		import Stats from 'three/addons/libs/stats.module.js';
-		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 		let camera, scene, renderer, stats, mixer, model;
 
@@ -78,7 +77,7 @@
 						// 從three中聲明材質
 						const material = new THREE.MeshStandardMaterial( {
 							emissive: 0xffffff, // 设置自发光颜色为白色
-							emissiveIntensity: 10, // 设置自发光强度（值越高，越亮）
+							emissiveIntensity: 1000, // 设置自发光强度（值越高，越亮）
 							wireframe: true, // 将模型渲染为 wireframe
 						} );
 
@@ -102,16 +101,16 @@
 			// Load a glTF resource
 			loader.load(
 				// resource URL
-				'models/gltf/Xbot.glb',
+				'models/gltf/space-test.gltf',
 				function ( gltf ) {
 
 
 					model = gltf.scene;
-					// scene.add( model );
+					scene.add( model );
 					// 建立gltf本身自帶的動畫
 
 					// 調整模型大小
-					model.scale.set( 100, 100, 100 );
+					model.scale.set( 2, 2, 2 );
 
 					// 初始化模型位置
 					// model.position.set( 0, 0, 0 );
@@ -146,37 +145,12 @@
 		}
 
 
-
-
-		// 線匡球體點擊---------------------------------------------
-
-
-		// 创建一个wireframe的球体
-		const geometry = new THREE.IcosahedronGeometry( 100, 8 );
-		const material = new THREE.MeshStandardMaterial( { wireframe: true, wireframeLinewidth: 2, emissive: 0xffffff, emissiveIntensity: 100 } );
-		const sphere = new THREE.Mesh( geometry, material );
-		scene.add( sphere );
-
-		const geometry2 = new THREE.IcosahedronGeometry( 98, 5 );
-		const material2 = new THREE.MeshStandardMaterial( {
-			emissive: 0x000000,
-			emissiveIntensity: 10,
-			// opacity: 0.9, // 设置不透明度
-			transparent: true, // 开启透明模式
-
-
-		} );
-		const sphere2 = new THREE.Mesh( geometry2, material2 );
-
-		scene.add( sphere2 );
-
-
 		// 讓模型跟著滑鼠方向稍微移動，可用在3d產品上
 
 		// 鼠标位置和速度变量
 		const mouse = new THREE.Vector2();
-		const driftSpeed = 0.1; // 漂移速度，我現在調成零：關掉
-		const maxDriftDistance = 5; // 最大漂移距离
+		const driftSpeed = 0.1; // 漂移速度
+		const maxDriftDistance = 50; // 最大漂移距离
 
 		// 监听鼠标移动事件
 		document.addEventListener( 'mousemove', ( event ) => {
@@ -186,7 +160,7 @@
 			mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
 			// 限制漂移范围在上下左右
-			mouse.x = Math.min( Math.max( mouse.x, - maxDriftDistance ), maxDriftDistance );
+			// mouse.x = Math.min( Math.max( mouse.x, - maxDriftDistance ), maxDriftDistance );
 
 			// 反转鼠标的y坐标，以实现上下移动方向顶倒
 			mouse.y = Math.min( Math.max( - mouse.y, - maxDriftDistance ), maxDriftDistance );
@@ -263,17 +237,17 @@
 			//周期性执行渲染函数，请求下一帧渲染
 			requestAnimationFrame( animate );
 			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
-			mixer.update( delta );
+			// mixer.update( delta );
 
 
 			// 背景跟著滑鼠飄動
-			if ( sphere, sphere2 ) {
+			if ( scene ) {
 
 				// 计算目标位置
 				const targetPosition = new THREE.Vector3( mouse.x * maxDriftDistance, - mouse.y * maxDriftDistance, - 5 );
 				// 使用lerp方法以缓慢移动模型
-				sphere.position.lerp( targetPosition, driftSpeed );
-				sphere2.position.lerp( targetPosition, driftSpeed );
+				scene.position.lerp( targetPosition, driftSpeed );
+				// sphere2.position.lerp( targetPosition, driftSpeed );
 
 			}
 

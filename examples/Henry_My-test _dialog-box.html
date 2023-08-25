@@ -47,13 +47,11 @@
 
 		let spotLightRed;
 
-		let camera, scene, renderer, stats, mixer, model;
+		let camera, scene, renderer, stats, model;
 
 		// 初始化
 		initContent();
 
-		// 如果一个三维场景或物體是不停变化的，肯定要周期性调用执行。直接调用 Clock 对象的方法和属性
-		const clock = new THREE.Clock();
 
 
 		// 導入內容部分
@@ -123,12 +121,6 @@
 					// 將上面自發光的線匡導入
 					convertToWireframe( model );
 
-
-					// 用于场景中特定对象的动画的播放器。讓gltf本身的動畫播放
-					mixer = new THREE.AnimationMixer( model );
-					mixer.clipAction( gltf.animations[ 0 ] ).play();
-
-
 				}
 
 			);
@@ -180,8 +172,8 @@
 				clickZones.push( clickZone );
 
 				clickZone.rotation.z += Math.PI;
-
-			};
+		
+	};
 
 
 			// 创建四个点击区块，分别位于球体的四个象限
@@ -221,7 +213,7 @@
 					.to( { y: targetScale }, 300 )
 					.easing( TWEEN.Easing.Quadratic.Out )
 					.start();
-
+					
 			};
 
 			// 旋轉
@@ -282,8 +274,10 @@
 			} );
 
 			document.addEventListener( 'click', () => {
-
+		
 				if ( hoveredObject ) {
+		
+					hoveredObject.userData.clicked = true;
 
 					const clickedZone = hoveredObject.userData.targetUrl;
 					if ( ! clickedZone ) {
@@ -351,9 +345,9 @@
 					}
 
 				} else {
-		
+
 					// 点击对话框外部时隐藏对话框
-		
+
 					const isDialogClicked = dialogBox.contains( event.target );
 					if ( ! isDialogClicked ) {
 
@@ -429,7 +423,7 @@
 
 				dialogBox.style.display = 'none';
 				scene.remove( spotLightRed );
-		
+
 				spotLight.intensity = 100000;
 				scene.add( spotLight );
 
@@ -554,14 +548,9 @@
 			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
 			renderer.render( scene, camera );
 
-			//clock.getDelta()方法获得两帧的时间间隔，返回时间单位：秒
-			const delta = clock.getDelta();
+
 			//周期性执行渲染函数，请求下一帧渲染
 			requestAnimationFrame( animate );
-			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
-			// mixer.update( delta );
-
-
 
 			TWEEN.update();
 

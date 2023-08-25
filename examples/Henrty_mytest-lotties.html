@@ -51,18 +51,18 @@
 			scene.background = new THREE.Color( 0x111111 );
 
 			const loader = new LottieLoader();
-			loader.setQuality( 0.3 );
-			loader.load( 'textures/lottie/loading.json', function ( texture ) {
+			loader.setQuality( 0.5 );
+			loader.load( 'textures/lottie/special-hover-fast.json', function ( texture ) {
 
 				setupControls( texture.animation );
 
 				// texture = new THREE.TextureLoader().load( 'textures/uv_grid_directx.jpg' );
 				// texture.colorSpace = THREE.SRGBColorSpace;
 
-				const geometry = new RoundedBoxGeometry( 0, 2, 2, 7, 0.2 );
+				const geometry = new RoundedBoxGeometry( 0, 1, 1, 7, 0.2 );
 				const material = new THREE.MeshStandardMaterial( {
-					roughness: 0.3, map: texture, transparent: true,
-					opacity: 1, emissiveIntensity: 100
+					roughness: 0.8, map: texture, transparent: true,
+					opacity: 1
 				} );
 				mesh = new THREE.Mesh( geometry, material );
 				scene.add( mesh );
