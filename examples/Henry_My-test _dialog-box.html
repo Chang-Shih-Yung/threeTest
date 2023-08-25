@@ -158,7 +158,7 @@
 
 
 			// // 创建点击区块的函数
-			const createClickZone = ( position, targetUrl ) => {
+			const createClickZone = ( position ) => {
 
 
 
@@ -177,7 +177,6 @@
 
 				scene.add( clickZone );
 
-				clickZone.userData.targetUrl = targetUrl;
 				clickZones.push( clickZone );
 
 				clickZone.rotation.z += Math.PI;
@@ -195,21 +194,21 @@
 
 
 
-			// 监听点击和hover事件
+			// 监听点击和hover事件（3維＋2維（滑鼠位置））
 			const raycaster = new THREE.Raycaster();
 			const mouse = new THREE.Vector2();
 			let hoveredObject = null;
-			let isRotating = false; // 用于跟踪物体是否正在旋转
+			let isRotating = false; // 開關，一開始不旋轉
 
-			// hover後緩慢放大
-			const handleHover = ( object, isHovered ) => {
+			// hover後緩慢放大與+放進旋轉
+			const handleHover = ( coneObject, isHovered ) => {
 
 				const targetScale = isHovered ? 2 : 1;
 
 				if ( isHovered && ! isRotating ) {
 
 					isRotating = true;
-					rotateObject( object ); // 开始旋转
+					rotateObject( coneObject ); // 把旋轉部分放進來。开始旋转
 
 				} else if ( ! isHovered && isRotating ) {
 
@@ -218,23 +217,24 @@
 				}
 
 
-				new TWEEN.Tween( object.scale )
+				new TWEEN.Tween( coneObject.scale )
 					.to( { y: targetScale }, 300 )
 					.easing( TWEEN.Easing.Quadratic.Out )
 					.start();
 
 			};
 
-			const rotateObject = ( object ) => {
+			// 旋轉
+			const rotateObject = ( coneObject ) => {
 
-				new TWEEN.Tween( object.rotation )
-					.to( { y: object.rotation.y + Math.PI * 1 }, 800 ) // 每次旋转π（180度）
+				new TWEEN.Tween( coneObject.rotation )
+					.to( { y: coneObject.rotation.y + Math.PI * 1 }, 800 ) // 每次旋转π（180度）
 					.easing( TWEEN.Easing.Linear.None )
 					.onComplete( () => {
 
 						if ( isRotating ) {
 
-							rotateObject( object ); // 继续循环旋转
+							rotateObject( coneObject ); // 继续循环旋转
 
 						}
 
@@ -243,7 +243,7 @@
 
 			};
 
-
+			// 監聽滑鼠位置
 			document.addEventListener( 'mousemove', ( event ) => {
 
 				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -287,42 +287,80 @@
 
 					const clickedZone = hoveredObject.userData.targetUrl;
 					if ( ! clickedZone ) {
-		
+
 						// 在点击区块没有链接时，创建并添加红色小聚光灯
-						const spotLightRedColor = 0xff0000; // 红色
-						const spotLightIntensity = 400;
-		
+						const spotLightRedColor = 0xFFB000; // 红色
+						const spotLightIntensity = 700;
+
 						// 计算红色小聚光灯的位置，位于点击区块上方200个单位的位置
 						const spotLightPosition = hoveredObject.position.clone();
 						spotLightPosition.y += 50;
-		
+
 						spotLightRed = new THREE.SpotLight( spotLightRedColor, spotLightIntensity );
 						spotLightRed.position.copy( spotLightPosition ); // 设置聚光灯位置为计算后的位置
 						spotLightRed.angle = Math.PI / 2; // 聚光锥的角度
-						spotLightRed.penumbra = 2; // 模糊系数
-						spotLightRed.decay = 2; // 衰减率
-						spotLightRed.distance = 150; // 最大照射距离
+						spotLightRed.penumbra = 5; // 模糊系数
+						spotLightRed.decay = 3; // 衰减率
+						spotLightRed.distance = 140; // 最大照射距离
 						spotLightRed.target.position.copy( hoveredObject.position ); // 设置聚光灯的目标为点击区块的位置
 						scene.add( spotLightRed ); // 将红色小聚光灯添加到场景中
 
 						// 調整原本聚光燈參數
-						spotLight.intensity = 700; // 调整聚光灯的强度
+						spotLight.intensity = 2000; // 调整聚光灯的强度
 						spotLight.position.set( 0, 450, 0 ); // 设置位置在模型正上方
 						spotLight.decay = 10; // 衰减率
 						spotLight.distance = 1000; // 最大照射距离
+						scene.add( spotLight );
 
 
 					}
 
-				} else {
+					// 對話框挑出位置事件
+					if ( clickedZone ) {
 
-					scene.remove( spotLightRed );
+						window.location.href = clickedZone;
+
+					} else {
+
+						// 如果点击区块没有链接，显示对话框
+						const intersection = raycaster.intersectObject( hoveredObject );
+						if ( intersection.length > 0 ) {
+
+							const position = intersection[ 0 ].point.clone();
+							position.project( camera );
+							const screenPosition = new THREE.Vector2(
+								( - position.x + 1 ) / 5 * window.innerWidth,
+								( - position.y + 1 ) / 2 * window.innerHeight
+							);
+							showDialogBox( screenPosition );
+							controls.enabled = false; // 禁止球体旋转
+							const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 50 );
+							new TWEEN.Tween( camera.position )
+								.to( targetPosition, 1200 )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.start();
+
+						} else {
+
+							hideDialogBox();
+							controls.enabled = true; // 允许球体旋转
+
+
+						}
+
+					}
+
+				} else {
 		
-					spotLight.intensity = 100000; // 调整聚光灯的强度
-					spotLight.position.set( 0, 300, 0 ); // 设置位置在模型正上方
-					spotLight.decay = 28; // 衰减率
-					spotLight.distance = 1500; // 最大照射距离
-					scene.add( spotLight );
+					// 点击对话框外部时隐藏对话框
+		
+					const isDialogClicked = dialogBox.contains( event.target );
+					if ( ! isDialogClicked ) {
+
+						hideDialogBox();
+						controls.enabled = true; // 允许球体旋转
+
+					}
 
 				}
 
@@ -347,7 +385,6 @@
 				dialogBox.style.display = 'none'; // 初始化隱藏對話匡
 				document.body.appendChild( dialogBox );
 
-				// 设置初始位置在屏幕右侧之外
 
 				return dialogBox;
 
@@ -383,7 +420,6 @@
 					controls.enabled = true; // 允许球体旋转
 
 				} );
-				// 追加子集
 				dialogBox.appendChild( closeButton );
 
 			};
@@ -394,6 +430,9 @@
 				dialogBox.style.display = 'none';
 				scene.remove( spotLightRed );
 		
+				spotLight.intensity = 100000;
+				scene.add( spotLight );
+
 			};
 
 			// 在点击对话框外部时隐藏对话框，點擊對話匡內部則無效
@@ -418,54 +457,20 @@
 						hideDialogBox();
 						controls.enabled = true; // 允许球体旋转
 
-					}
-
-				}
-
-			} );
-
-			document.addEventListener( 'click', () => {
-
-				if ( hoveredObject ) {
-
-					const clickedZone = hoveredObject.userData.targetUrl;
-					if ( clickedZone ) {
-
-						window.location.href = clickedZone;
-
 					} else {
 
-						// 如果点击区块没有链接，显示对话框
-						const intersection = raycaster.intersectObject( hoveredObject );
-						if ( intersection.length > 0 ) {
-
-							const position = intersection[ 0 ].point.clone();
-							position.project( camera );
-							const screenPosition = new THREE.Vector2(
-								( - position.x + 1 ) / 5 * window.innerWidth,
-								( - position.y + 1 ) / 2 * window.innerHeight
-							);
-							showDialogBox( screenPosition );
-							controls.enabled = false; // 禁止球体旋转
-							const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 50 );
-							new TWEEN.Tween( camera.position )
-								.to( targetPosition, 1000 )
-								.easing( TWEEN.Easing.Quadratic.Out )
-								.start();
-
-						} else {
-
-							hideDialogBox();
-							controls.enabled = true; // 允许球体旋转
-
-
-						}
+						spotLight.intensity = 2000; // 调整聚光灯的强度
+						spotLight.position.set( 0, 450, 0 ); // 设置位置在模型正上方
+						spotLight.decay = 10; // 衰减率
+						spotLight.distance = 1000; // 最大照射距离
+						scene.add( spotLight );
 
 					}
 
 				}
 
 			} );
+
 
 			//建立渲染器
 			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
