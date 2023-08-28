@@ -154,7 +154,7 @@
 
 
 
-				const clickZoneGeometry = new THREE.ConeGeometry( 9, 17, 6 );
+				const clickZoneGeometry = new THREE.ConeGeometry( 5, 17, 6 );
 				const clickZoneMaterial = new THREE.MeshStandardMaterial( {
 					color: 0x00000,
 					// wireframe: true,
@@ -213,7 +213,7 @@
 					.to( { y: targetScale }, 300 )
 					.easing( TWEEN.Easing.Quadratic.Out )
 					.start();
-					
+		
 			};
 
 			// 旋轉
@@ -283,25 +283,25 @@
 					if ( ! clickedZone ) {
 
 						// 在点击区块没有链接时，创建并添加红色小聚光灯
-						const spotLightRedColor = 0xFFB000; // 红色
-						const spotLightIntensity = 700;
+						const spotLightRedColor = 0xffffff;
+						const spotLightIntensity = 100000;
 
-						// 计算红色小聚光灯的位置，位于点击区块上方200个单位的位置
+						// 计算红色小聚光灯的位置，位于点击区块上方的位置
 						const spotLightPosition = hoveredObject.position.clone();
-						spotLightPosition.y += 50;
+						spotLightPosition.y += 70;
 
 						spotLightRed = new THREE.SpotLight( spotLightRedColor, spotLightIntensity );
 						spotLightRed.position.copy( spotLightPosition ); // 设置聚光灯位置为计算后的位置
 						spotLightRed.angle = Math.PI / 2; // 聚光锥的角度
 						spotLightRed.penumbra = 5; // 模糊系数
-						spotLightRed.decay = 3; // 衰减率
-						spotLightRed.distance = 140; // 最大照射距离
+						spotLightRed.decay = 6.2; // 衰减率
+						spotLightRed.distance = 160; // 最大照射距离
 						spotLightRed.target.position.copy( hoveredObject.position ); // 设置聚光灯的目标为点击区块的位置
-						scene.add( spotLightRed ); // 将红色小聚光灯添加到场景中
+						scene.add( spotLightRed ); // 将小聚光灯添加到场景中
 
 						// 調整原本聚光燈參數
-						spotLight.intensity = 2000; // 调整聚光灯的强度
-						spotLight.position.set( 0, 450, 0 ); // 设置位置在模型正上方
+						spotLight.intensity = 3000; // 调整聚光灯的强度
+						spotLight.position.set( 0, 500, 0 ); // 设置位置在模型正上方
 						spotLight.decay = 10; // 衰减率
 						spotLight.distance = 1000; // 最大照射距离
 						scene.add( spotLight );
@@ -425,6 +425,11 @@
 				scene.remove( spotLightRed );
 
 				spotLight.intensity = 100000;
+				spotLight.position.set( 0, 300, 0 ); // 设置位置在模型正上方
+				spotLight.angle = Math.PI / 3; // 聚光锥的角度
+				spotLight.penumbra = 2; // 模糊系数
+				spotLight.decay = 28; // 衰减率
+				spotLight.distance = 1500; // 最大照射距离
 				scene.add( spotLight );
 
 			};
@@ -450,14 +455,6 @@
 
 						hideDialogBox();
 						controls.enabled = true; // 允许球体旋转
-
-					} else {
-
-						spotLight.intensity = 2000; // 调整聚光灯的强度
-						spotLight.position.set( 0, 450, 0 ); // 设置位置在模型正上方
-						spotLight.decay = 10; // 衰减率
-						spotLight.distance = 1000; // 最大照射距离
-						scene.add( spotLight );
 
 					}
 
@@ -488,9 +485,9 @@
 
 
 		// 不可翻轉地平線以下
-		controls.maxPolarAngle = Math.PI / 2;
+		controls.maxPolarAngle = Math.PI / 2.1;
 		// 不可翻轉地平線以上
-		controls.minPolarAngle = Math.PI / 2.5; //2=360度
+		controls.minPolarAngle = Math.PI / 2.7; //2=360度
 
 		// 是否能放大縮小
 		controls.enableZoom = true;
