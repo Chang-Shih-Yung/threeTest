@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - materials - cubemap mipmaps</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - cubemap customized mipmaps
+		demo.<br />
+		Left: nothing happened<br />
+		Right: nothing happened as well<br />
+	</div>
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/20.0.0/tween.umd.js"></script>
+
+
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+					
+				}
+			}
+		</script>
+
+
+	<script type="module">
+
+		import * as THREE from 'three';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import Stats from 'three/addons/libs/stats.module.js';
+		import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+		import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+
+
+
+
+		let spotLightRed;
+
+		let camera, scene, renderer, stats, model, labelRenderer;
+
+		// 初始化
+		initContent();
+
+
+
+		// 導入內容部分
+		function initContent() {
+
+			// 導入相機
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 4, 2000000 );
+
+			// camera.position.set( 730, 360, 120 );
+			camera.position.set( 530, 290, 920 );
+
+			// 導入監控效能視窗
+			stats = new Stats();
+			document.body.appendChild( stats.dom );
+
+
+			// 將想要導入的gltf模型轉成線匡，原理是將wireframe套用在子集模型中的點＆線
+			function convertToWireframe( object ) {
+
+				// traverse意思是應用、遍佈於每個子對象，以及可以被調用（固定寫法）
+				object.traverse( function ( child ) {
+
+					// 選取子集的所有面
+					if ( child.isMesh ) {
+
+						const material = new THREE.MeshStandardMaterial( {
+							wireframe: true, // 将模型渲染为 wireframe
+						} );
+
+						child.material = material; // 將模型套用在全部子集內
+
+					}
+
+
+				} );
+
+			}
+
+			// 將想要導入的gltf模型轉成不透光的材質
+			function convertToBlack( object ) {
+
+				// traverse意思是應用、遍佈於每個子對象，以及可以被調用
+				object.traverse( function ( child ) {
+
+					// 選取子集的所有面
+					if ( child.isMesh ) {
+
+						const material = new THREE.MeshBasicMaterial( {
+							transparent: true,
+							opacity: 0.9,
+		
+						} );
+
+						child.material = material; // 將模型套用在全部子集內
+
+					}
+
+
+				} );
+
+	}
+
+			// 導入gltf模型，並用開源的dracoLoader庫來壓縮gltf
+			const loader = new GLTFLoader();
+
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );// 設置 Draco 解碼器的路徑
+			loader.setDRACOLoader( dracoLoader );// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
+
+
+			// Load a glTF resource
+			loader.load(
+				// resource URL
+				'models/gltf/ground.gltf',
+				function ( gltf ) {
+
+
+					model = gltf.scene;
+					scene.add( model );
+					// 建立gltf本身自帶的動畫
+
+					// 調整模型大小
+					model.scale.set( 0.55, 0.55, 0.55 );
+
+					// 初始化模型位置
+					model.position.set( 0, - 230, 20 );
+
+					// 將上面自發光的線匡導入
+					convertToWireframe( model );
+
+				}
+
+			);// Load a glTF resource2
+			loader.load(
+				// resource URL
+				'models/gltf/ground.gltf',
+				function ( gltf ) {
+
+
+					model = gltf.scene;
+					scene.add( model );
+					// 建立gltf本身自帶的動畫
+
+					// 調整模型大小
+					model.scale.set( 0.549, 0.549, 0.549 );
+
+					// 初始化模型位置
+					model.position.set( 0, - 230, 20 );
+
+					// 將上面不透光材質導入
+					convertToBlack( model );
+
+				}
+
+			);
+
+
+			// 创建聚光灯
+			const spotLight = new THREE.SpotLight( 0xffffff, 500000 ); // 颜色和强度
+			spotLight.position.set( 100, 300, - 50 ); // 设置位置在模型正上方
+			spotLight.angle = Math.PI / 4; // 聚光锥的角度
+			spotLight.penumbra = 1; // 模糊系数
+			spotLight.decay = 31; // 衰减率
+			spotLight.distance = 1600; // 最大照射距离
+
+			// 设置聚光灯的方向，指向模型正下方
+			const target = new THREE.Object3D();
+			scene.add( target );
+			spotLight.target = target;
+
+			// 将聚光灯添加到场景
+			scene.add( spotLight );
+
+
+			const loaderFont = new FontLoader();
+			loaderFont.load( 'fonts/helvetiker_regular.typeface.json' );
+		
+			// 添加点击区块
+			const clickZones = [];
+
+
+			// // 创建点击区块的函数
+			const createClickZone = ( position ) => {
+
+
+
+				const clickZoneGeometry = new THREE.ConeGeometry( 0.5, 107, 6 );
+				const clickZoneMaterial = new THREE.MeshStandardMaterial( {
+					color: 0x00000,
+					// wireframe: true,
+					emissive: 0xff0000,
+					emissiveIntensity: 100,
+					transparent: true,
+					opacity: 0.8,
+				} );
+				const clickZone = new THREE.Mesh( clickZoneGeometry, clickZoneMaterial );
+
+				clickZone.position.copy( position );
+
+				scene.add( clickZone );
+
+				clickZones.push( clickZone );
+
+				clickZone.rotation.z += Math.PI;
+
+				clickZone.layers.enableAll();
+
+				const moonMassDiv = document.createElement( 'div' );
+				moonMassDiv.className = 'label';
+				moonMassDiv.textContent = '軍事監測';
+				moonMassDiv.style.fontSize = '16px';
+				moonMassDiv.style.backgroundColor = 'transparent';
+
+				const moonMassLabel = new CSS2DObject( moonMassDiv );
+				moonMassLabel.position.set( 10, - 75, 0 );
+				moonMassLabel.center.set( 0, 0 );
+				clickZone.add( moonMassLabel );
+				moonMassLabel.layers.set( 0 );
+
+
+			};
+
+			labelRenderer = new CSS2DRenderer();
+			labelRenderer.setSize( window.innerWidth, window.innerHeight );
+			labelRenderer.domElement.style.position = 'absolute';
+			labelRenderer.domElement.style.top = '0px';
+			document.body.appendChild( labelRenderer.domElement );
+
+
+
+			// 创建四个点击区块，分别位于球体的四个象限
+
+			createClickZone( new THREE.Vector3( 110, 90, 65 ) );
+			createClickZone( new THREE.Vector3( - 100, - 15, 100 ) );
+			createClickZone( new THREE.Vector3( 90, 20, - 200 ) );
+			createClickZone( new THREE.Vector3( 80, - 10, - 80 ) );
+
+
+
+
+
+			// 监听点击和hover事件（3維＋2維（滑鼠位置））
+			const raycaster = new THREE.Raycaster();
+			const mouse = new THREE.Vector2();
+			let hoveredObject = null;
+			let isRotating = false; // 開關，一開始不旋轉
+
+			// hover後緩慢放大與+放進旋轉
+			const handleHover = ( coneObject, isHovered ) => {
+
+				const targetScale = isHovered ? 2 : 1;
+
+				if ( isHovered && ! isRotating ) {
+
+					isRotating = true;
+					// rotateObject( coneObject ); // 把旋轉部分放進來。开始旋转
+
+				} else if ( ! isHovered && isRotating ) {
+
+					isRotating = false;
+
+				}
+
+
+				new TWEEN.Tween( coneObject.scale )
+					.to( { y: targetScale }, 300 )
+					.easing( TWEEN.Easing.Quadratic.Out )
+					.start();
+
+			};
+
+			// 旋轉
+			// const rotateObject = ( coneObject ) => {
+
+			// 	new TWEEN.Tween( coneObject.rotation )
+			// 		.to( { y: coneObject.rotation.y + Math.PI * 1 }, 800 ) // 每次旋转π（180度）
+			// 		.easing( TWEEN.Easing.Linear.None )
+			// 		.onComplete( () => {
+
+			// 			if ( isRotating ) {
+
+			// 				rotateObject( coneObject ); // 继续循环旋转
+
+			// 			}
+
+			// 		} )
+			// 		.start();
+
+			// };
+
+			// 監聽滑鼠位置
+			document.addEventListener( 'mousemove', ( event ) => {
+
+				mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+				mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+				raycaster.setFromCamera( mouse, camera );
+
+				const intersects = raycaster.intersectObjects( clickZones );
+
+				if ( intersects.length > 0 ) {
+
+					if ( intersects[ 0 ].object !== hoveredObject ) {
+
+						if ( hoveredObject ) {
+
+							handleHover( hoveredObject, false );
+
+						}
+
+						hoveredObject = intersects[ 0 ].object;
+						handleHover( hoveredObject, true );
+
+					}
+
+				} else {
+
+					if ( hoveredObject ) {
+
+						handleHover( hoveredObject, false );
+						hoveredObject = null;
+
+					}
+
+				}
+
+			} );
+
+			document.addEventListener( 'click', () => {
+
+				if ( hoveredObject ) {
+
+					hoveredObject.userData.clicked = true;
+
+					const clickedZone = hoveredObject.userData.targetUrl;
+					if ( ! clickedZone ) {
+
+						// 在点击区块没有链接时，创建并添加小聚光灯
+						const spotLightRedColor = 0xffffff;
+						const spotLightIntensity = 80000;
+
+						// 计算小聚光灯的位置，位于点击区块上方的位置
+						const spotLightPosition = hoveredObject.position.clone();
+						spotLightPosition.y += 30;
+
+						spotLightRed = new THREE.SpotLight( spotLightRedColor, spotLightIntensity );
+						spotLightRed.position.copy( spotLightPosition ); // 设置聚光灯位置为计算后的位置
+						spotLightRed.angle = Math.PI / 1; // 聚光锥的角度
+						spotLightRed.penumbra = 1; // 模糊系数
+						spotLightRed.decay = 6; // 衰减率
+						spotLightRed.distance = 160; // 最大照射距离
+						spotLightRed.target.position.copy( hoveredObject.position ); // 设置聚光灯的目标为点击区块的位置
+						scene.add( spotLightRed ); // 将小聚光灯添加到场景中
+
+						// 調整原本聚光燈參數
+						spotLight.intensity = 5000; // 调整聚光灯的强度
+						spotLight.position.set( 0, 500, 0 ); // 设置位置在模型正上方
+						spotLight.decay = 10; // 衰减率
+						spotLight.distance = 1000; // 最大照射距离
+						scene.add( spotLight );
+
+
+					}
+
+					// 對話框挑出位置事件
+					if ( clickedZone ) {
+
+						window.location.href = clickedZone;
+
+					} else {
+
+						// 如果点击区块没有链接，显示对话框
+						const intersection = raycaster.intersectObject( hoveredObject );
+						if ( intersection.length > 0 ) {
+
+							const position = intersection[ 0 ].point.clone();
+							position.project( camera );
+							const screenPosition = new THREE.Vector2(
+								( - position.x + 1 ) / 5 * window.innerWidth,
+								( - position.y + 1 ) / 2 * window.innerHeight
+							);
+							showDialogBox( screenPosition );
+							controls.enabled = false; // 禁止球体旋转
+							const targetPosition = hoveredObject.position.clone().normalize().multiplyScalar( 50 );
+							new TWEEN.Tween( camera.position )
+								.to( targetPosition, 1300 )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.start();
+
+						} else {
+
+							hideDialogBox();
+							controls.enabled = true; // 允许球体旋转
+
+
+						}
+
+					}
+
+				} else {
+
+					// 点击对话框外部时隐藏对话框
+
+					const isDialogClicked = dialogBox.contains( event.target );
+					if ( ! isDialogClicked ) {
+
+						hideDialogBox();
+						controls.enabled = true; // 允许球体旋转
+
+					}
+
+				}
+
+			} );
+
+
+
+			// ---------------------------------------------
+
+			// 创建一个点击区块上的对话框
+			const createDialogBox = () => {
+
+				const dialogBox = document.createElement( 'div' );
+				dialogBox.style.position = 'absolute';
+				dialogBox.style.background = 'black';
+				dialogBox.style.opacity = '0.9';
+				dialogBox.style.color = 'white';
+				dialogBox.style.padding = '100px 50px';
+				dialogBox.style.border = '3px solid grey';
+				dialogBox.style.borderRadius = '0 20px 0 20px';
+				dialogBox.style.pointerEvents = 'auto'; // Ensure the dialog box doesn't interfere with clicking
+				dialogBox.style.display = 'none'; // 初始化隱藏對話匡
+				document.body.appendChild( dialogBox );
+
+
+				return dialogBox;
+
+			};
+
+			const dialogBox = createDialogBox();
+
+
+			// 显示对话框
+			const showDialogBox = ( position ) => {
+
+				dialogBox.style.display = 'block';
+				dialogBox.style.left = `${position.x}px`;
+				dialogBox.style.top = `${position.y}px`;
+
+				dialogBox.innerHTML = '哈囉！低軌衛星';
+				dialogBox.style.fontSize = '28px';
+
+				// 创建关闭按钮
+				const closeButton = document.createElement( 'button' );
+				closeButton.innerHTML = '✖'; // 叉叉符号
+				closeButton.style.position = 'absolute';
+				closeButton.style.top = '10px';
+				closeButton.style.right = '10px';
+				closeButton.style.color = 'white';
+				closeButton.style.border = 'none';
+				closeButton.style.backgroundColor = 'transparent';
+				closeButton.style.cursor = 'pointer';
+				closeButton.style.fontSize = '18px'; // 设置字体大小
+				closeButton.addEventListener( 'click', () => {
+
+					hideDialogBox();
+					controls.enabled = true; // 允许球体旋转
+
+				} );
+				dialogBox.appendChild( closeButton );
+
+			};
+
+			// 隐藏对话框
+			const hideDialogBox = () => {
+
+				dialogBox.style.display = 'none';
+				scene.remove( spotLightRed );
+
+				spotLight.intensity = 500000;
+				spotLight.position.set( 100, 300, - 50 ); // 设置位置在模型正上方
+				spotLight.angle = Math.PI / 4; // 聚光锥的角度
+				spotLight.penumbra = 1; // 模糊系数
+				spotLight.decay = 31; // 衰减率
+				spotLight.distance = 1600; // 最大照射距离
+				scene.add( spotLight );
+
+			};
+
+			// 在点击对话框外部时隐藏对话框，點擊對話匡內部則無效
+			document.addEventListener( 'mouseup', ( event ) => {
+
+				if ( hoveredObject ) {
+
+					const clickedZone = hoveredObject.userData.targetUrl;
+					if ( ! clickedZone ) {
+
+						hideDialogBox();
+						controls.enabled = true; // 允许球体旋转
+
+					}
+
+				} else {
+
+					// 点击对话框外部时隐藏对话框
+					const isDialogClicked = dialogBox.contains( event.target );
+					if ( ! isDialogClicked ) {
+
+						hideDialogBox();
+						controls.enabled = true; // 允许球体旋转
+
+					}
+
+				}
+
+			} );
+
+
+			//建立渲染器
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 0.01;
+			//將渲染器插入到body標籤裡
+			document.body.appendChild( renderer.domElement );
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+
+		}
+
+
+
+		// 鏡頭控制
+		const controls = new OrbitControls( camera, labelRenderer.domElement );
+
+
+		// 不可翻轉地平線以下
+		controls.maxPolarAngle = Math.PI / 2.3;
+		// 不可翻轉地平線以上
+		controls.minPolarAngle = Math.PI / 3; //2=360度
+
+		// 是否能放大縮小
+		controls.enableZoom = true;
+
+		controls.dampingFactor = 0.01; // 阻尼系數
+		// controls.autoRotate = true; //啟用自動旋轉
+		controls.autoRotateSpeed = 0.15;
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+		// 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
+		controls.minDistance = 750;
+		controls.maxDistance = 750;
+
+
+		// 禁止所以滑鼠行為
+		controls.enabled = false;
+
+
+
+
+
+
+		// 畫面大小監聽
+		window.addEventListener( 'resize', onWindowResize );
+
+		// 瀏覽器變動自適應
+		function onWindowResize() {
+
+			// 重新設置視窗寬高比
+			camera.aspect = window.innerWidth / window.innerHeight;
+			// 更新相機投影矩陣
+			camera.updateProjectionMatrix();
+			// 重新設置重新設置渲染器渲染範圍
+			renderer.setSize( window.innerWidth, window.innerHeight );
+		
+			labelRenderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function update() {
+
+			controls.update();
+
+			// 數據更新
+			stats.update();
+
+
+		}
+
+
+		// 循環渲染
+		function animate() {
+
+
+
+			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
+			renderer.render( scene, camera );
+
+			//周期性执行渲染函数，请求下一帧渲染
+			requestAnimationFrame( animate );
+		
+			TWEEN.update();
+		
+			update();
+		
+			labelRenderer.render( scene, camera );
+			scene.rotation.y += 0.001;
+
+		}
+
+		// 開始渲染
+		animate();
+
+
+
+	</script>
+
+</body>
+
+</html>

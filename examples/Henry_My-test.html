@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - materials - cubemap mipmaps</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - cubemap customized mipmaps
+		demo.<br />
+		Left: nothing happened<br />
+		Right: nothing happened as well<br />
+	</div>
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+
+	<script type="module">
+
+		import * as THREE from 'three';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import Stats from 'three/addons/libs/stats.module.js';
+		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+		import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+
+
+		let camera, scene, renderer, stats, mixer, model;
+
+		// 初始化
+		initContent();
+
+		// 如果一个三维场景或物體是不停变化的，肯定要周期性调用执行。直接调用 Clock 对象的方法和属性
+		const clock = new THREE.Clock();
+
+
+		// 導入內容部分
+		function initContent() {
+
+			// 導入相機
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 4, 2000000 );
+
+			// camera.position.set( 730, 360, 120 );
+			camera.position.set( 530, 290, 920 );
+
+			// 導入監控效能視窗
+			stats = new Stats();
+			document.body.appendChild( stats.dom );
+
+			// 導入HDRI，最簡短寫法
+			new RGBELoader()
+				.setPath( 'textures/equirectangular/' )
+				.load( 'moonless_golf_1k.hdr',
+					function ( texture ) {
+
+						texture.mapping = THREE.EquirectangularReflectionMapping;
+
+						scene.background = texture;
+						scene.backgroundBlurriness = 0.5;
+
+						scene.environment = texture;
+
+					} );
+
+
+
+			// 將想要導入的gltf模型轉成線匡，原理是將wireframe套用在子集模型中的點＆線
+			function convertToWireframe( object ) {
+
+				// traverse意思是應用、遍佈於每個子對象，以及可以被調用（固定寫法）
+				object.traverse( function ( child ) {
+
+					// 選取子集的所有面
+					if ( child.isMesh ) {
+
+						// 從three中聲明材質
+						const material = new THREE.MeshStandardMaterial( {
+							emissive: 0xffffff, // 设置自发光颜色为白色
+							emissiveIntensity: 10, // 设置自发光强度（值越高，越亮）
+							wireframe: true, // 将模型渲染为 wireframe
+						} );
+
+						child.material = material; // 將模型套用在全部子集內
+
+					}
+
+
+				} );
+
+			}
+
+			// 導入gltf模型，並用開源的dracoLoader庫來壓縮gltf
+			const loader = new GLTFLoader();
+
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );// 設置 Draco 解碼器的路徑
+			loader.setDRACOLoader( dracoLoader );// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
+
+
+			// Load a glTF resource
+			loader.load(
+				// resource URL
+				'models/gltf/Xbot.glb',
+				function ( gltf ) {
+
+
+					model = gltf.scene;
+					// scene.add( model );
+					// 建立gltf本身自帶的動畫
+
+					// 調整模型大小
+					model.scale.set( 100, 100, 100 );
+
+					// 初始化模型位置
+					// model.position.set( 0, 0, 0 );
+
+					// 將上面自發光的線匡導入
+					convertToWireframe( model );
+
+
+					// 用于场景中特定对象的动画的播放器。讓gltf本身的動畫播放
+					mixer = new THREE.AnimationMixer( model );
+					mixer.clipAction( gltf.animations[ 0 ] ).play();
+
+
+				}
+
+			);
+
+
+
+
+			// 導入輔助視覺方匡(大小、格數)
+			// const helper = new THREE.GridHelper( 500, 15, 0xffffff, 0xffffff );
+			// scene.add( helper );
+
+
+			//建立渲染器
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 0.01;
+			//將渲染器插入到body標籤裡
+			document.body.appendChild( renderer.domElement );
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+
+		}
+
+
+
+
+		// 線匡球體點擊---------------------------------------------
+
+
+		// 创建一个wireframe的球体
+		const geometry = new THREE.IcosahedronGeometry( 100, 8 );
+		const material = new THREE.MeshStandardMaterial( { wireframe: true, wireframeLinewidth: 2, emissive: 0xffffff, emissiveIntensity: 100 } );
+		const sphere = new THREE.Mesh( geometry, material );
+		scene.add( sphere );
+
+		const geometry2 = new THREE.IcosahedronGeometry( 98, 5 );
+
+		// 设置雾效
+		// scene.fog = new THREE.Fog( 0xff0000, 1, 10 );
+
+		const material2 = new THREE.MeshStandardMaterial( {
+			emissive: 0x000000,
+			emissiveIntensity: 10,
+			// opacity: 0.9, // 设置不透明度
+			transparent: true, // 开启透明模式
+
+
+		} );
+		const sphere2 = new THREE.Mesh( geometry2, material2 );
+
+		scene.add( sphere2 );
+
+		// 添加点击区块
+		const clickZones = [];
+
+
+		// // 创建点击区块的函数
+		const createClickZone = ( position, targetUrl ) => {
+
+			// Calculate the direction from position to the sphere's center
+			const directionToCenter = new THREE.Vector3().subVectors( sphere.position, position ).normalize();
+
+			const clickZoneGeometry = new THREE.ConeGeometry( 7, 15, 6 );
+			const clickZoneMaterial = new THREE.MeshStandardMaterial( {
+				color: 0xffffff,
+				// wireframe: true,
+				emissive: 0xff0000,
+				emissiveIntensity: 100,
+				// transparent: true,
+				// opacity: 1
+			} );
+			const clickZone = new THREE.Mesh( clickZoneGeometry, clickZoneMaterial );
+
+			// Calculate the rotation quaternion to point the cone away from the direction to center
+			const targetQuaternion = new THREE.Quaternion().setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), directionToCenter );
+
+			// Apply rotation and position to the clickZone
+			clickZone.quaternion.copy( targetQuaternion );
+
+			clickZone.position.copy( position );
+			scene.add( clickZone );
+
+			clickZone.userData.targetUrl = targetUrl;
+			clickZones.push( clickZone );
+
+		};
+
+
+
+		// 创建四个点击区块，分别位于球体的四个象限
+
+		createClickZone( new THREE.Vector3( 70, 50, 90 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
+		createClickZone( new THREE.Vector3( - 50, 70, - 90 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
+		createClickZone( new THREE.Vector3( 90, - 70, - 50 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
+		createClickZone( new THREE.Vector3( - 50, - 90, - 70 ), 'https://yiyingloveart.blogspot.com/2013/07/threejs.html' );
+
+
+
+
+
+
+
+
+		// 监听点击和悬停事件
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+		let hoveredObject = null;
+
+		// hover後緩慢放大
+		const handleHover = ( object, isHovered ) => {
+
+			const targetScale = isHovered ? 2 : 1;
+
+			new TWEEN.Tween( object.scale )
+				.to( { y: targetScale }, 300 )
+				.easing( TWEEN.Easing.Quadratic.Out )
+				.start();
+
+		};
+
+		document.addEventListener( 'mousemove', ( event ) => {
+
+			mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+			mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+			raycaster.setFromCamera( mouse, camera );
+
+			const intersects = raycaster.intersectObjects( clickZones );
+
+			if ( intersects.length > 0 ) {
+
+				if ( intersects[ 0 ].object !== hoveredObject ) {
+
+					if ( hoveredObject ) {
+
+						handleHover( hoveredObject, false );
+
+					}
+
+					hoveredObject = intersects[ 0 ].object;
+					handleHover( hoveredObject, true );
+
+				}
+
+			} else {
+
+				if ( hoveredObject ) {
+
+					handleHover( hoveredObject, false );
+					hoveredObject = null;
+
+				}
+
+			}
+
+		} );
+
+		// eslint-disable-next-line no-unused-vars
+		document.addEventListener( 'click', ( event ) => {
+
+			if ( hoveredObject ) {
+
+				const clickedZone = hoveredObject.userData.targetUrl;
+				if ( clickedZone ) {
+
+					window.location.href = clickedZone;
+
+				}
+
+			}
+
+		} );
+
+
+
+		// ---------------------------------------------
+
+
+		// 讓模型跟著滑鼠方向稍微移動，可用在3d產品上
+
+		// 鼠标位置和速度变量
+		const mouseZ = new THREE.Vector2();
+		const driftSpeed = 0; // 漂移速度，我現在調成零：關掉
+		const maxDriftDistance = 5; // 最大漂移距离
+
+		// 监听鼠标移动事件
+		document.addEventListener( 'mousemove', ( event ) => {
+
+			// 将鼠标的坐标归一化到范围[-1, 1]
+			mouseZ.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+			mouseZ.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+			// 限制漂移范围在上下左右
+			mouse.x = Math.min( Math.max( mouse.x, - maxDriftDistance ), maxDriftDistance );
+
+			// 反转鼠标的y坐标，以实现上下移动方向顶倒
+			mouse.y = Math.min( Math.max( - mouse.y, - maxDriftDistance ), maxDriftDistance );
+
+		} );
+
+
+
+		// 鏡頭控制
+		const controls = new OrbitControls( camera, renderer.domElement );
+
+
+		// 不可翻轉地平線以下
+		// controls.maxPolarAngle = Math.PI / 2;
+		// 不可翻轉地平線以上
+		// controls.minPolarAngle = Math.PI / 2;
+
+		// 是否能放大縮小
+		controls.enableZoom = true;
+
+		controls.dampingFactor = 0.01; // 阻尼系數
+		controls.autoRotate = true; //啟用自動旋轉
+		controls.autoRotateSpeed = 0.15;
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+		// 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
+		controls.minDistance = 500;
+		controls.maxDistance = 500;
+
+
+		// 禁止所以滑鼠行為
+		// controls.enabled = false;
+
+
+
+
+
+
+		// 畫面大小監聽
+		window.addEventListener( 'resize', onWindowResize );
+
+		// 瀏覽器變動自適應
+		function onWindowResize() {
+
+			// 重新設置視窗寬高比
+			camera.aspect = window.innerWidth / window.innerHeight;
+			// 更新相機投影矩陣
+			camera.updateProjectionMatrix();
+			// 重新設置重新設置渲染器渲染範圍
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function update() {
+
+			controls.update();
+
+			// 數據更新
+			stats.update();
+
+
+		}
+
+
+		// 循環渲染
+		function animate() {
+
+			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
+			renderer.render( scene, camera );
+
+			//clock.getDelta()方法获得两帧的时间间隔，返回时间单位：秒
+			const delta = clock.getDelta();
+			//周期性执行渲染函数，请求下一帧渲染
+			requestAnimationFrame( animate );
+			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
+			mixer.update( delta );
+
+
+			// 背景跟著滑鼠飄動
+			if ( sphere, geometry2, clickZones ) {
+
+				// 计算目标位置
+				const targetPosition = new THREE.Vector3( mouse.x * maxDriftDistance, - mouse.y * maxDriftDistance, - 5 );
+				// 使用lerp方法以缓慢移动模型
+				sphere.position.lerp( targetPosition, driftSpeed );
+				sphere2.position.lerp( targetPosition, driftSpeed );
+
+			}
+
+
+			TWEEN.update();
+
+			// 大旋转球体
+			// sphere.rotation.x += 0.0005;
+			// sphere.rotation.y += 0.00001;
+
+
+			// 更新点击区块、coneGeometry的位置和旋转，讓他跟著球體旋轉
+			for ( const clickZone of clickZones ) {
+
+				// 计算点击区块的位置，使其跟随球体旋转
+				const position = clickZone.position.clone().applyAxisAngle( new THREE.Vector3( 0, 1, 0 ), 0.00001 );
+
+				const directionToCenter = new THREE.Vector3().subVectors( sphere.position, position ).normalize();
+				const targetQuaternion = new THREE.Quaternion().setFromUnitVectors( new THREE.Vector3( 0, 1, 0 ), directionToCenter );
+				clickZone.quaternion.copy( targetQuaternion );
+
+				// Rotate the cone by 180 degrees
+				// clickZone.rotation.z += Math.PI;
+
+				// 更新点击区块的位置
+				clickZone.position.copy( position );
+
+		
+			}
+
+			update();
+
+		}
+
+		// 開始渲染:)
+		animate();
+
+
+
+	</script>
+
+</body>
+
+</html>
