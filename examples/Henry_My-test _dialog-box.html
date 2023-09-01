@@ -75,7 +75,7 @@
 			// 將想要導入的gltf模型轉成線匡，原理是將wireframe套用在子集模型中的點＆線
 			function convertToWireframe( object ) {
 
-				// traverse意思是應用、遍佈於每個子對象，以及可以被調用（固定寫法）
+				// traverse意思是應用、遍佈於每個子對象，以及可以被調用
 				object.traverse( function ( child ) {
 
 					// 選取子集的所有面
@@ -94,7 +94,7 @@
 
 			}
 
-			// 將想要導入的gltf模型轉成不透光的材質
+			// 將想要導入的gltf模型轉成半透材質
 			function convertToBlack( object ) {
 
 				// traverse意思是應用、遍佈於每個子對象，以及可以被調用
@@ -105,7 +105,7 @@
 
 						const material = new THREE.MeshBasicMaterial( {
 							transparent: true,
-							opacity: 0.9,
+							opacity: 0.8,
 		
 						} );
 
@@ -174,8 +174,8 @@
 
 
 			// 创建聚光灯
-			const spotLight = new THREE.SpotLight( 0xffffff, 500000 ); // 颜色和强度
-			spotLight.position.set( 100, 300, - 50 ); // 设置位置在模型正上方
+			const spotLight = new THREE.SpotLight( 0xffffff, 100000 ); // 颜色和强度
+			spotLight.position.set( - 50, 300, - 50 ); // 设置位置在模型正上方
 			spotLight.angle = Math.PI / 4; // 聚光锥的角度
 			spotLight.penumbra = 1; // 模糊系数
 			spotLight.decay = 31; // 衰减率
@@ -495,8 +495,8 @@
 				dialogBox.style.display = 'none';
 				scene.remove( spotLightRed );
 
-				spotLight.intensity = 500000;
-				spotLight.position.set( 100, 300, - 50 ); // 设置位置在模型正上方
+				spotLight.intensity = 100000;
+				spotLight.position.set( - 50, 300, - 50 ); // 设置位置在模型正上方
 				spotLight.angle = Math.PI / 4; // 聚光锥的角度
 				spotLight.penumbra = 1; // 模糊系数
 				spotLight.decay = 31; // 衰减率
