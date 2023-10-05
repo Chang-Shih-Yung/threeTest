@@ -175,7 +175,7 @@
 
 			// 创建聚光灯
 			const spotLight = new THREE.SpotLight( 0xffffff, 1000000 ); // 颜色和强度
-			spotLight.position.set( - 100, 400, - 100 ); // 设置位置在模型正上方
+			spotLight.position.set( - 100, 350, - 100 ); // 设置位置在模型正上方
 			spotLight.angle = Math.PI / 4; // 聚光锥的角度
 			spotLight.penumbra = 1; // 模糊系数
 			spotLight.decay = 31; // 衰减率
@@ -200,7 +200,7 @@
 			// // 创建点击区块的函数
 			const createClickZone = ( position ) => {
 
-				const clickZoneGeometry = new THREE.ConeGeometry( 0.5, 107, 6 );
+				const clickZoneGeometry = new THREE.ConeGeometry( 5, 17, 6 );
 				const clickZoneMaterial = new THREE.MeshStandardMaterial( {
 					color: 0x00000,
 					// wireframe: true,

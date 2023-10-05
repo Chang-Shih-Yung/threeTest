@@ -11,12 +11,12 @@
 <body>
 
 	<div id="container"></div>
-	<div id="info">
+	<!-- <div id="info">
 		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - cubemap customized mipmaps
 		demo.<br />
 		Left: nothing happened<br />
 		Right: nothing happened as well<br />
-	</div>
+	</div> -->
 
 	<!-- Import maps polyfill -->
 	<!-- Remove this when import maps will be widely supported -->
@@ -42,8 +42,9 @@
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 		import Stats from 'three/addons/libs/stats.module.js';
 		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-		import { FontLoader } from 'three/addons/loaders/FontLoader.js';
-
+		import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+		import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 
 		let camera, scene, renderer, stats, mixer, model;
 
@@ -63,6 +64,7 @@
 
 			// camera.position.set( 730, 360, 120 );
 			camera.position.set( 530, 290, 920 );
+			console.log( camera );
 
 			// 導入監控效能視窗
 			stats = new Stats();
@@ -178,27 +180,25 @@
 
 
 		// 创建一个wireframe的球体
-		const geometry = new THREE.IcosahedronGeometry( 100, 8 );
-		const material = new THREE.MeshStandardMaterial( { wireframe: true, wireframeLinewidth: 2, emissive: 0xffffff, emissiveIntensity: 100 } );
+		const geometry = new THREE.IcosahedronGeometry( 100, 16 );
+		const material = new THREE.MeshStandardMaterial( { wireframe: true } );
 		const sphere = new THREE.Mesh( geometry, material );
 		scene.add( sphere );
 
-		const geometry2 = new THREE.IcosahedronGeometry( 98, 5 );
+		// 创建聚光灯
+		const spotLight = new THREE.SpotLight( 0xffffff, 50000000 ); // 颜色和强度
+		// 设置聚光灯的位置为摄像机位置
+		spotLight.position.copy( camera.position );
+		spotLight.angle = Math.PI / 2; // 聚光锥的角度
+		spotLight.penumbra = 1; // 模糊系数
+		spotLight.decay = 11; // 衰减率
+		spotLight.distance = 1550; // 最大照射距离
 
-		// 设置雾效
-		// scene.fog = new THREE.Fog( 0xff0000, 1, 10 );
-
-		const material2 = new THREE.MeshStandardMaterial( {
-			emissive: 0x000000,
-			emissiveIntensity: 10,
-			// opacity: 0.9, // 设置不透明度
-			transparent: true, // 开启透明模式
-
-
-		} );
-		const sphere2 = new THREE.Mesh( geometry2, material2 );
-
-		scene.add( sphere2 );
+		// 设置聚光灯的目标为wireframe球体
+		spotLight.target = sphere;
+		
+		// 将聚光灯添加到场景
+		scene.add( spotLight );
 
 		// 添加点击区块
 		const clickZones = [];
@@ -228,7 +228,7 @@
 			clickZone.quaternion.copy( targetQuaternion );
 
 			clickZone.position.copy( position );
-			scene.add( clickZone );
+			// scene.add( clickZone );
 
 			clickZone.userData.targetUrl = targetUrl;
 			clickZones.push( clickZone );
@@ -330,7 +330,7 @@
 
 		// 鼠标位置和速度变量
 		const mouseZ = new THREE.Vector2();
-		const driftSpeed = 0; // 漂移速度，我現在調成零：關掉
+		const driftSpeed = 0; // 漂移速度
 		const maxDriftDistance = 5; // 最大漂移距离
 
 		// 监听鼠标移动事件
@@ -349,10 +349,9 @@
 		} );
 
 
-
+		
 		// 鏡頭控制
 		const controls = new OrbitControls( camera, renderer.domElement );
-
 
 		// 不可翻轉地平線以下
 		// controls.maxPolarAngle = Math.PI / 2;
@@ -363,7 +362,7 @@
 		controls.enableZoom = true;
 
 		controls.dampingFactor = 0.01; // 阻尼系數
-		controls.autoRotate = true; //啟用自動旋轉
+		// controls.autoRotate = true; //啟用自動旋轉
 		controls.autoRotateSpeed = 0.15;
 		controls.enablePan = false;
 		controls.enableDamping = true;
@@ -376,7 +375,16 @@
 		// 禁止所以滑鼠行為
 		// controls.enabled = false;
 
+		const composer = new EffectComposer( renderer );
 
+		const renderPass = new RenderPass( scene, camera );
+		composer.addPass( renderPass );
+		const bokehPass = new BokehPass( scene, camera, {
+			focus: 1.0, // 焦点深度，可以根据需要调整
+			aperture: 0.025, // 光圈大小，可以根据需要调整
+			maxblur: 0.002, // 最大模糊程度
+		} );
+		composer.addPass( bokehPass );
 
 
 
@@ -422,13 +430,12 @@
 
 
 			// 背景跟著滑鼠飄動
-			if ( sphere, geometry2, clickZones ) {
+			if ( sphere, clickZones ) {
 
 				// 计算目标位置
 				const targetPosition = new THREE.Vector3( mouse.x * maxDriftDistance, - mouse.y * maxDriftDistance, - 5 );
 				// 使用lerp方法以缓慢移动模型
 				sphere.position.lerp( targetPosition, driftSpeed );
-				sphere2.position.lerp( targetPosition, driftSpeed );
 
 			}
 
@@ -436,8 +443,8 @@
 			TWEEN.update();
 
 			// 大旋转球体
-			// sphere.rotation.x += 0.0005;
-			// sphere.rotation.y += 0.00001;
+			// sphere.rotation.x += 0.05;
+			// sphere.rotation.y += 0.01;
 
 
 			// 更新点击区块、coneGeometry的位置和旋转，讓他跟著球體旋轉
@@ -460,6 +467,7 @@
 			}
 
 			update();
+			composer.render();
 
 		}
 

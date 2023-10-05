@@ -47,8 +47,6 @@
 		// 初始化
 		initContent();
 
-		// 如果一个三维场景或物體是不停变化的，肯定要周期性调用执行。直接调用 Clock 对象的方法和属性
-		const clock = new THREE.Clock();
 
 
 		// 導入內容部分
@@ -232,13 +230,10 @@
 			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
 			renderer.render( scene, camera );
 
-			//clock.getDelta()方法获得两帧的时间间隔，返回时间单位：秒
-			const delta = clock.getDelta();
+		
 			//周期性执行渲染函数，请求下一帧渲染
 			requestAnimationFrame( animate );
-			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
-			// mixer.update( delta );
-
+		
 
 			// 背景跟著滑鼠飄動
 			if ( scene ) {
@@ -252,11 +247,6 @@
 			}
 
 
-			TWEEN.update();
-
-			// 大旋转球体
-			// sphere.rotation.x += 0.0005;
-			// sphere.rotation.y += 0.00001;
 
 
 		

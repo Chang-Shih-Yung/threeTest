@@ -41,7 +41,7 @@
 		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 		import Stats from 'three/addons/libs/stats.module.js';
-		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
 
 		let camera, scene, renderer, stats, mixer, model;
 
@@ -57,80 +57,54 @@
 
 			// 導入相機
 			scene = new THREE.Scene();
-			camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 4, 2000000);
+			camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 4, 2000000 );
 
-			camera.position.set(730, 260, 120);
+			camera.position.set( 730, 260, 120 );
 			// camera.position.set( 530, 290, 920 );
 
 			// 導入監控效能視窗
 			stats = new Stats();
-			document.body.appendChild(stats.dom);
+			document.body.appendChild( stats.dom );
 
-			// 導入HDRI，最簡短寫法
-			new RGBELoader()
-				.setPath('textures/equirectangular/')
-				.load('moonless_golf_1k.hdr',
-					function (texture) {
+			// 導入HDRI
+			// new RGBELoader()
+			// 	.setPath( 'textures/equirectangular/' )
+			// 	.load( 'space1.hdr',
+			// 		function ( texture ) {
 
-						texture.mapping = THREE.EquirectangularReflectionMapping;
+			// 			texture.mapping = THREE.EquirectangularReflectionMapping;
 
-						scene.background = texture;
-						scene.backgroundBlurriness = 0;
+			// 			scene.background = texture;
+			// 			scene.backgroundBlurriness = 0;
 
-						scene.environment = texture;
+			// 			scene.environment = texture;
 
-					});
+			// 		} );
 
-
-
-			// 將想要導入的gltf模型轉成線匡，原理是將wireframe套用在子集模型中的點＆線
-			function convertToWireframe(object) {
-
-				// traverse意思是應用、遍佈於每個子對象，以及可以被調用（固定寫法）
-				object.traverse(function (child) {
-
-					// 選取子集的所有面
-					if (child.isMesh) {
-
-						// 從three中聲明材質
-						const material = new THREE.MeshStandardMaterial({
-							emissive: 0xffffff, // 设置自发光颜色为白色
-							emissiveIntensity: 100, // 设置自发光强度（值越高，越亮）
-							wireframe: true, // 将模型渲染为 wireframe
-						});
-
-						child.material = material; // 將模型套用在全部子集內
-
-					}
-
-
-				});
-
-			}
 
 			// 導入gltf模型，並用開源的dracoLoader庫來壓縮gltf
 			const loader = new GLTFLoader();
 			const dracoLoader = new DRACOLoader();
-			dracoLoader.setDecoderPath('/examples/jsm/libs/draco/');// 設置 Draco 解碼器的路徑
-			loader.setDRACOLoader(dracoLoader);// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
+			dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );// 設置 Draco 解碼器的路徑
+			loader.setDRACOLoader( dracoLoader );// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
 
 
 			// Load a glTF resource
 			loader.load(
 				// resource URL
 				'models/gltf/cubesat.gltf',
-				function (gltf) {
+				function ( gltf ) {
 
 
 					model = gltf.scene;
-					// scene.add( model );
+					scene.add( model );
 
 
 					// 調整模型大小
-					model.scale.set(100, 100, 100);
+					model.scale.set( 100, 100, 100 );
 
 					// 初始化模型位置
-					model.position.set(0, - 90, 0);
+					model.position.set( 0, - 90, 0 );
 
 					// 定義自訂的頂點和片段着色器
 					const vertexShader = `
@@ -149,29 +123,29 @@
 					`;
 
 					// 創建自定義 ShaderMaterial
-					const customMaterial = new THREE.ShaderMaterial({
+					const customMaterial = new THREE.ShaderMaterial( {
 						uniforms: {
-							color: { value: new THREE.Color(0xffffff) }, // 自發光顏色
+							color: { value: new THREE.Color( 0xffffff ) }, // 自發光顏色
 							emissiveIntensity: { value: 10000 }, // 自發光強度
 						},
 						vertexShader: vertexShader,
 						fragmentShader: fragmentShader,
 						side: THREE.BackSide, // 雙面渲染
-					});
+					} );
 
 					// 使用EdgesGeometry創建邊緣線
-					const edgesGeometry = new THREE.EdgesGeometry(gltf.scene.children[0].geometry);
+					const edgesGeometry = new THREE.EdgesGeometry( gltf.scene.children[ 0 ].geometry );
 
 					// 創建包含邊緣線的網格並應用自定義 ShaderMaterial
-					const edgeMesh = new THREE.LineSegments(edgesGeometry, customMaterial);
+					const edgeMesh = new THREE.LineSegments( edgesGeometry, customMaterial );
 
 					// 添加邊緣線到場景
-					scene.add(edgeMesh);
+					scene.add( edgeMesh );
 					// convertToWireframe(model);
 
 					// 用于场景中特定对象的动画的播放器。讓gltf本身的動畫播放
-					mixer = new THREE.AnimationMixer(model);
-					mixer.clipAction(gltf.animations[0]).play();
+					mixer = new THREE.AnimationMixer( model );
+					mixer.clipAction( gltf.animations[ 0 ] ).play();
 
 
 				}
@@ -180,13 +154,13 @@
 
 
 			//建立渲染器
-			renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			renderer.toneMappingExposure = 0.3;
 			//將渲染器插入到body標籤裡
-			document.body.appendChild(renderer.domElement);
+			document.body.appendChild( renderer.domElement );
 			renderer.shadowMap.enabled = true;
 			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -196,7 +170,7 @@
 
 
 		// 鏡頭控制
-		const controls = new OrbitControls(camera, renderer.domElement);
+		const controls = new OrbitControls( camera, renderer.domElement );
 
 
 		// 不可翻轉地平線以下
@@ -227,7 +201,7 @@
 
 
 		// 畫面大小監聽
-		window.addEventListener('resize', onWindowResize);
+		window.addEventListener( 'resize', onWindowResize );
 
 		// 瀏覽器變動自適應
 		function onWindowResize() {
@@ -237,7 +211,7 @@
 			// 更新相機投影矩陣
 			camera.updateProjectionMatrix();
 			// 重新設置重新設置渲染器渲染範圍
-			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setSize( window.innerWidth, window.innerHeight );
 
 		}
 
@@ -256,14 +230,14 @@
 		function animate() {
 
 			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
-			renderer.render(scene, camera);
+			renderer.render( scene, camera );
 
 			//clock.getDelta()方法获得两帧的时间间隔，返回时间单位：秒
 			const delta = clock.getDelta();
 			//周期性执行渲染函数，请求下一帧渲染
-			requestAnimationFrame(animate);
+			requestAnimationFrame( animate );
 			// Mixer 是用来管理所有动作的，它可以调度出对象的某个动作进行操控，在這裡針對gltf的動畫。
-			// mixer.update( delta );
+			mixer.update( delta );
 
 			TWEEN.update();
 

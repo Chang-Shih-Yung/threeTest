@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - materials - cubemap mipmaps</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<!-- <div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - cubemap customized mipmaps
+		demo.<br />
+		Left: nothing happened<br />
+		Right: nothing happened as well<br />
+	</div> -->
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+
+	<script type="module">
+
+		import * as THREE from 'three';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+		import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+		import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+
+		let camera, scene, renderer;
+
+		// 初始化
+		initContent();
+
+
+		// 導入內容部分
+		function initContent() {
+
+			// 導入相機
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 4, 2000000 );
+
+			// camera.position.set( 730, 360, 120 );
+			camera.position.set( 530, 290, 920 );
+			console.log( camera );
+
+		
+
+
+			//建立渲染器
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 0.01;
+			//將渲染器插入到body標籤裡
+			document.body.appendChild( renderer.domElement );
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+
+		}
+
+
+
+
+		// 创建一个wireframe的球体
+		const geometry = new THREE.IcosahedronGeometry( 100, 16 );
+		const material = new THREE.MeshStandardMaterial( { wireframe: true } );
+		const sphere = new THREE.Mesh( geometry, material );
+		scene.add( sphere );
+
+		// 创建聚光灯
+		const spotLight = new THREE.SpotLight( 0xffffff, 50000000 ); // 颜色和强度
+		// 设置聚光灯的位置为摄像机位置
+		spotLight.position.copy( camera.position );
+		spotLight.angle = Math.PI / 2; // 聚光锥的角度
+		spotLight.penumbra = 1; // 模糊系数
+		spotLight.decay = 11; // 衰减率
+		spotLight.distance = 1550; // 最大照射距离
+
+		// 设置聚光灯的目标为wireframe球体
+		spotLight.target = sphere;
+		
+		// 将聚光灯添加到场景
+		scene.add( spotLight );
+
+
+
+		
+		// 鏡頭控制
+		const controls = new OrbitControls( camera, renderer.domElement );
+
+		// 不可翻轉地平線以下
+		// controls.maxPolarAngle = Math.PI / 2;
+		// 不可翻轉地平線以上
+		// controls.minPolarAngle = Math.PI / 2;
+
+		// 是否能放大縮小
+		controls.enableZoom = true;
+
+		controls.dampingFactor = 0.01; // 阻尼系數
+		// controls.autoRotate = true; //啟用自動旋轉
+		controls.autoRotateSpeed = 0.15;
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+		// 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
+		controls.minDistance = 500;
+		controls.maxDistance = 500;
+
+		
+
+		const composer = new EffectComposer( renderer );
+
+		const renderPass = new RenderPass( scene, camera );
+		composer.addPass( renderPass );
+		const bokehPass = new BokehPass( scene, camera, {
+			focus: 1.0, // 焦点深度，可以根据需要调整
+			aperture: 0.025, // 光圈大小，可以根据需要调整
+			maxblur: 0.002, // 最大模糊程度
+		} );
+		composer.addPass( bokehPass );
+
+		function update() {
+
+			controls.update();
+
+
+
+		}
+
+
+		// 循環渲染
+		function animate() {
+
+			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
+			renderer.render( scene, camera );
+
+		
+			//周期性执行渲染函数，请求下一帧渲染
+			requestAnimationFrame( animate );
+
+			update();
+		
+			composer.render();
+
+		}
+
+		// 開始渲染:)
+		animate();
+
+
+
+	</script>
+
+</body>
+
+</html>
