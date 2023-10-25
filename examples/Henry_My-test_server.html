@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - GLTFloader</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="main.css">
+  </head>
+
+  <body>
+    <div id="info">
+      <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GLTFLoader<br />
+      Battle Damaged Sci-fi Helmet by
+      <a href="https://sketchfab.com/theblueturtle_" target="_blank" rel="noopener">theblueturtle_</a><br />
+      <a href="https://hdrihaven.com/hdri/?h=royal_esplanade" target="_blank" rel="noopener">Royal Esplanade</a> from <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a>
+    </div>
+
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../build/three.module.js",
+          "three/addons/": "./jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+
+      import * as THREE from 'three';
+
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+      import Stats from 'three/addons/libs/stats.module.js';
+
+      let camera, scene, stats, renderer, model;
+
+      init();
+      
+
+      function init() {
+
+      	const container = document.createElement( 'div' );
+      	document.body.appendChild( container );
+
+      	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+      	camera.position.set( - 1.8, 0.6, 2.7 );
+      	scene = new THREE.Scene();
+
+
+      	// 導入監控效能視窗
+      	stats = new Stats();
+      	document.body.appendChild( stats.dom );
+
+      
+
+      	new RGBELoader()
+      		.setPath( 'textures/equirectangular/' )
+      		.load( 'metal2.hdr', function ( texture ) {
+
+      			texture.mapping = THREE.EquirectangularReflectionMapping;
+
+      			scene.background = texture;
+      			scene.backgroundBlurriness = 1;
+      			scene.environment = texture;
+      			scene.background = new THREE.Color( 0x000000 );
+      
+
+      
+
+      		} );
+      	const textureLoader = new THREE.TextureLoader();
+      	const map1 = textureLoader.load( 'textures/camera-textures/Front.png' );
+      	const map2 = textureLoader.load( 'textures/noise2.jpg' );
+      	const map3 = textureLoader.load( 'textures/camera-textures/Yellow PCB.png' );
+      	const map4 = textureLoader.load( 'textures/noise.jpg' );
+      
+      	const bodyMaterial = new THREE.MeshStandardMaterial( {
+      		metalness: 1.0, roughness: 0.2,
+      		color: 0x464646,
+      		map: map1,
+      		bumpMap: map1,
+      		bumpScale: 0.01,
+      	} );
+
+      	const silverMaterial = new THREE.MeshStandardMaterial( {
+      		color: 0xaaaaaa,
+      		metalness: 0.6,
+      		bumpMap: map2,
+      		bumpScale: 0.0005,
+      		metalnessMap: map4,
+      		roughness: 0.1,
+      	} );
+
+
+      	const handleMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0x464646,
+      		metalness: 1.0,
+      		specular: 0xffffff,
+      		roughness: 0.2,
+      		clearcoat: 1.0,
+      		clearcoatRoughness: 0.2,
+      		metalnessMap: map4,
+      	} );
+      	const blackMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0x302b2a,
+      		metalness: 1.0,
+      		roughness: 0.01,
+      		clearcoat: 1.0,
+      		clearcoatRoughness: 0.1,
+      	} );
+
+      	const orangeBump = new THREE.MeshPhysicalMaterial( {
+      		map: map3,
+      		metalness: 1.0, bumpMap: map3, bumpScale: 0.003,
+      	} );
+      	// orangeBump.color = new THREE.Color(0xffbc00);
+      	orangeBump.roughness = 0.3; // 粗糙度
+      	orangeBump.metalness = 1;
+      	orangeBump.clearcoat = 1;
+      	orangeBump.clearcoatRoughness = 0.2;
+
+
+      	const glassMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0xffffff, metalness: 0.25, roughness: 0, transmission: 1.0
+      	} );
+
+      	const redMaterial = new THREE.MeshStandardMaterial( {
+      		color: 0xffffff,
+
+      	} );
+      	// model
+      
+      	const loader = new GLTFLoader().setPath( 'models/gltf/' );
+      	loader.load( 'server.glb', function ( gltf ) {
+
+      		model = gltf.scene;
+      		model.position.set( 0, 0, 0 );
+      		// model.rotation.y = Math.PI;
+      		// model.scale.set(0.01,0.01,0.01);
+      		model.traverse( ( child ) => {
+
+      			if ( child.isMesh ) {
+      
+      				if ( child.name === 'body' ) {
+
+      					child.material = bodyMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'red' ) {
+
+      					child.material = blackMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'orange' ) {
+
+      					child.material = orangeBump;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'black' ) {
+
+      					child.material = handleMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'body-down-silver' ) {
+
+      					child.material = silverMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+      
+      				if ( child.name === 'glass' ) {
+
+      					child.material = glassMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+      
+			}
+      
+		} );
+      
+      		scene.add( model );
+
+
+      	} );
+
+      	renderer = new THREE.WebGLRenderer( { antialias: true } );
+      	renderer.setPixelRatio( window.devicePixelRatio );
+      	renderer.setSize( window.innerWidth, window.innerHeight );
+      	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      	renderer.shadowMap.enabled = true;
+      	renderer.toneMappingExposure = 2;
+      	container.appendChild( renderer.domElement );
+
+      
+
+      	window.addEventListener( 'resize', onWindowResize );
+
+      }
+
+      // 鏡頭控制
+      const controls = new OrbitControls( camera, renderer.domElement );
+
+      // 是否能放大縮小
+      controls.enableZoom = true;
+
+      controls.dampingFactor = 0.05; // 阻尼系數
+      // controls.autoRotate = true; //啟用自動旋轉
+      controls.autoRotateSpeed = 1.15;
+      // controls.enablePan = false;
+      controls.enableDamping = true;
+
+      // 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
+      // controls.minDistance = 2;
+      controls.maxDistance = 10;
+      
+
+
+      // 禁止所以滑鼠行為
+      // controls.enabled = false;
+
+
+      function onWindowResize() {
+
+      	camera.aspect = window.innerWidth / window.innerHeight;
+      	camera.updateProjectionMatrix();
+
+      	renderer.setSize( window.innerWidth, window.innerHeight );
+
+      
+
+      }
+
+      function update() {
+
+      	controls.update();
+      
+      	stats.update();
+
+      }
+      //
+
+      function animate() {
+
+      	renderer.render( scene, camera );
+      	requestAnimationFrame( animate );
+      	update();
+
+
+      }
+
+      animate();
+
+    </script>
+
+  </body>
+</html>

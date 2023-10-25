@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - materials - cubemap mipmaps</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<div id="container"></div>
+	<div id="info">
+		<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - cubemap customized mipmaps
+		demo.<br />
+		Left: nothing happened<br />
+		Right: nothing happened as well<br />
+	</div>
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+
+
+	<script type="module">
+
+		import * as THREE from 'three';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import Stats from 'three/addons/libs/stats.module.js';
+
+
+		let camera, scene, renderer, stats;
+
+		// 初始化
+		initContent();
+
+
+
+		// 導入內容部分
+		function initContent() {
+
+			// 導入相機
+			scene = new THREE.Scene();
+			camera = new THREE.PerspectiveCamera( 20, window.innerWidth / window.innerHeight, 4, 2000000 );
+
+			// camera.position.set( 730, 260, 120 );
+			// camera.position.set( 530, 290, 920 );
+			camera.position.set( 30, - 250, 20 );
+		
+
+			// 導入監控效能視窗
+			stats = new Stats();
+			document.body.appendChild( stats.dom );
+
+
+			// 導入gltf模型，並用開源的dracoLoader庫來壓縮gltf
+			const loader = new GLTFLoader();
+			const dracoLoader = new DRACOLoader();
+			dracoLoader.setDecoderPath( '/examples/jsm/libs/draco/' );// 設置 Draco 解碼器的路徑
+			loader.setDRACOLoader( dracoLoader );// 將 dracoLoader 與 loader 相關聯，從而告訴 Three.js 在加載 GLTF 模型時應該使用 Draco 庫來處理幾何數據
+
+
+			// Load a glTF resource
+			loader.load(
+				// resource URL
+				'models/gltf/ground2.gltf',
+				function ( gltf ) {
+
+		
+					// 使用EdgesGeometry創建邊緣線
+					const edgesGeometry = new THREE.EdgesGeometry( gltf.scene.children[ 0 ].geometry );
+
+
+					// 創建包含邊緣線的網格
+					const edgeMesh = new THREE.LineSegments( edgesGeometry, new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 1 } ) );
+
+					// 添加邊緣線到場景
+					scene.add( edgeMesh );
+					edgeMesh.position.set( 0, 150, 0 );
+
+					edgeMesh.scale.set( 0.02, 0.02, 0.02 );
+		
+		
+
+
+
+				}
+
+			);
+
+
+
+
+
+
+			//建立渲染器
+			renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			renderer.toneMappingExposure = 1;
+			//將渲染器插入到body標籤裡
+			document.body.appendChild( renderer.domElement );
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+
+		}
+
+
+
+
+		// 鏡頭控制
+		const controls = new OrbitControls( camera, renderer.domElement );
+
+
+		// 不可翻轉地平線以下
+		// controls.maxPolarAngle = Math.PI / 4;
+		// 不可翻轉地平線以上
+		// controls.minPolarAngle = Math.PI / 4;
+
+		// 是否能放大縮小
+		controls.enableZoom = true;
+
+		controls.dampingFactor = 0.01; // 阻尼系數
+		// controls.autoRotate = true; //啟用自動旋轉
+		controls.autoRotateSpeed = 0.15;
+		controls.enablePan = false;
+		controls.enableDamping = true;
+
+		// 相機香外向內移動，到時候可以用在不同狀態縮放球體功能
+		// controls.minDistance = 300;
+		// controls.maxDistance = 300;
+
+
+		// 禁止所以滑鼠行為
+		// controls.enabled = false;
+
+
+
+
+
+
+		// 畫面大小監聽
+		window.addEventListener( 'resize', onWindowResize );
+
+		// 瀏覽器變動自適應
+		function onWindowResize() {
+
+			// 重新設置視窗寬高比
+			camera.aspect = window.innerWidth / window.innerHeight;
+			// 更新相機投影矩陣
+			camera.updateProjectionMatrix();
+			// 重新設置重新設置渲染器渲染範圍
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+		}
+
+		function update() {
+
+			controls.update();
+
+			// 數據更新
+			stats.update();
+
+
+		}
+
+
+		// 循環渲染
+		function animate() {
+
+			// 如果一个三维场景裡有模型是不停变化的，肯定要周期性调用执行.render()方法，於是下方用clock
+			renderer.render( scene, camera );
+			//周期性执行渲染函数，请求下一帧渲染
+			requestAnimationFrame( animate );
+
+			TWEEN.update();
+
+
+			update();
+
+		}
+
+		// 開始渲染
+		animate();
+
+
+
+	</script>
+
+</body>
+
+</html>

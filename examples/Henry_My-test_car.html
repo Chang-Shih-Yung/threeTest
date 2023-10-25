@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>three.js webgl - GLTFloader</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="main.css">
+  </head>
+
+  <body>
+    <div id="info">
+      <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GLTFLoader<br />
+      Battle Damaged Sci-fi Helmet by
+      <a href="https://sketchfab.com/theblueturtle_" target="_blank" rel="noopener">theblueturtle_</a><br />
+      <a href="https://hdrihaven.com/hdri/?h=royal_esplanade" target="_blank" rel="noopener">Royal Esplanade</a> from <a href="https://hdrihaven.com/" target="_blank" rel="noopener">HDRI Haven</a>
+    </div>
+
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../build/three.module.js",
+          "three/addons/": "./jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+
+      import * as THREE from 'three';
+
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+      let camera, scene, renderer, model;
+
+      init();
+      render();
+
+      function init() {
+
+      	const container = document.createElement( 'div' );
+      	document.body.appendChild( container );
+
+      	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.25, 20 );
+      	camera.position.set( - 1.8, 0.6, 2.7 );
+      	scene = new THREE.Scene();
+      
+
+      	new RGBELoader()
+      		.setPath( 'textures/equirectangular/' )
+      		.load( 'metal.hdr', function ( texture ) {
+
+      			texture.mapping = THREE.EquirectangularReflectionMapping;
+
+      			scene.background = texture;
+      			scene.backgroundBlurriness = 1;
+      			scene.environment = texture;
+      			scene.background = new THREE.Color( 0xbfe3dd );
+      
+
+      			render();
+
+      
+
+      		} );
+      	// const textureLoader = new THREE.TextureLoader();
+      	// const map1 = textureLoader.load('textures/server-textures/Servers_Normal.png')
+      
+      	const bodyMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0xff6b00, metalness: 1.0, roughness: 0.3,
+      		clearcoat: 1.0, clearcoatRoughness: 0.2
+      	} );
+      	const handleMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0x000000, metalness: 1.0, roughness: 0.6,
+      		clearcoat: 1.0, clearcoatRoughness: 0.2
+      	} );
+      	const glassMaterial = new THREE.MeshPhysicalMaterial( {
+      		color: 0xffffff, metalness: 0.25, roughness: 0, transmission: 1.0
+      	} );
+      	const lightMaterial = new THREE.MeshStandardMaterial( {
+      		color: 0xffffff, emssive: 0xffffff, emissiveIntensity: 500000
+      	} );
+      	// model
+      
+      	const loader = new GLTFLoader().setPath( 'models/gltf/' );
+      	loader.load( 'car.glb', function ( gltf ) {
+
+      		model = gltf.scene;
+      		model.position.set( 0, 0, 0 );
+      		model.scale.set( 0.01, 0.01, 0.01 );
+      		model.traverse( ( child ) => {
+
+      			if ( child.isMesh ) {
+
+      				// 例如，您可以根据子对象的名称来确定应用材质的部分
+      				if ( child.name === 'windows' ) {
+
+      					child.material = glassMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'handle' ) {
+
+      					child.material = handleMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'body' ) {
+
+      					child.material = bodyMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+
+      				if ( child.name === 'highlight_reflector' ) {
+
+      					child.material = lightMaterial;
+      					child.material.side = THREE.DoubleSide;
+      
+				}
+      
+			}
+      
+		} );
+      		scene.add( model );
+
+      		render();
+
+      	} );
+
+      	renderer = new THREE.WebGLRenderer( { antialias: true } );
+      	renderer.setPixelRatio( window.devicePixelRatio );
+      	renderer.setSize( window.innerWidth, window.innerHeight );
+      	renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      	renderer.toneMappingExposure = 1.2;
+      	container.appendChild( renderer.domElement );
+
+      	const controls = new OrbitControls( camera, renderer.domElement );
+      	controls.addEventListener( 'change', render ); // use if there is no animation loop
+      	// controls.minDistance = 2;
+      	controls.maxDistance = 10;
+      	controls.target.set( 0, 0, - 0.2 );
+      	controls.update();
+
+      	window.addEventListener( 'resize', onWindowResize );
+
+      }
+
+      function onWindowResize() {
+
+      	camera.aspect = window.innerWidth / window.innerHeight;
+      	camera.updateProjectionMatrix();
+
+      	renderer.setSize( window.innerWidth, window.innerHeight );
+
+      	render();
+
+      }
+
+      //
+
+      function render() {
+
+      	renderer.render( scene, camera );
+
+      }
+
+    </script>
+
+  </body>
+</html>

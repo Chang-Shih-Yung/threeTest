@@ -92,19 +92,13 @@
 			// Load a glTF resource
 			loader.load(
 				// resource URL
-				'models/gltf/cubesat.gltf',
+				'models/gltf/planet.gltf',
 				function ( gltf ) {
 
 
-					model = gltf.scene;
-					scene.add( model );
+					// model = gltf.scene;
+					// scene.add( model );
 
-
-					// 調整模型大小
-					model.scale.set( 100, 100, 100 );
-
-					// 初始化模型位置
-					model.position.set( 0, - 90, 0 );
 
 					// 定義自訂的頂點和片段着色器
 					const vertexShader = `
